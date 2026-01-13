@@ -19,9 +19,9 @@ from bpy.props import (
     IntProperty,
 )
 
-ANIMATE_DURATION = 0.8
-SLIDE_OFFSET = 250
-ZOOM_RATIO = 0.8
+ANIMATE_DURATION = 0.5
+SLIDE_OFFSET = 500
+ZOOM_RATIO = 0.4
 
 
 # --------------------------
@@ -51,7 +51,7 @@ class VSEImageAnimProperties(bpy.types.PropertyGroup):
         name="Image",
         description="Select an image",
         subtype="FILE_PATH",
-        update=lambda self, context: self.update_image_size(None),
+        update=lambda self, context: self.update_image_size(),
     )
 
     img_w: IntProperty(name="Image Width", default=0)
@@ -65,10 +65,10 @@ class VSEImageAnimProperties(bpy.types.PropertyGroup):
         items=[
             ("NONE", "None", ""),
             ("FADE", "Fade In", ""),
-            ("UD", "Up to Down", ""),
-            ("DU", "Down to Up", ""),
-            ("LR", "Left to Right", ""),
-            ("RL", "Right to Left", ""),
+            ("UP", "Up", ""),
+            ("DOWN", "Down", ""),
+            ("LEFT", "Left", ""),
+            ("RIGHT", "Right", ""),
             ("Z+", "Zoom+", ""),
             ("Z-", "Zoom-", ""),
         ],
@@ -110,10 +110,10 @@ class VSEImageAnimProperties(bpy.types.PropertyGroup):
         items=[
             ("NONE", "None", ""),
             ("FADE", "Fade Out", ""),
-            ("UD", "Up to Down", ""),
-            ("DU", "Down to Up", ""),
-            ("LR", "Left to Right", ""),
-            ("RL", "Right to Left", ""),
+            ("UP", "Up", ""),
+            ("DOWN", "Down", ""),
+            ("LEFT", "Left", ""),
+            ("RIGHT", "Right", ""),
             ("Z+", "Zoom+", ""),
             ("Z-", "Zoom-", ""),
         ],
@@ -134,11 +134,10 @@ class VSEImageAnimProperties(bpy.types.PropertyGroup):
     )
     out_rotation: FloatProperty(name="Rotation", default=0.0, description="Rotation")
 
-    def update_image_size(self, filepath: str | None):
-        filepath = filepath if filepath else self.filepath
-        if not filepath:
+    def update_image_size(self):
+        if not self.filepath:
             return
-        path = bpy.path.abspath(filepath)
+        path = bpy.path.abspath(self.filepath)
         try:
             img = bpy.data.images.get(path)
             if img is None:
@@ -188,7 +187,8 @@ class VSE_OT_read_img_strip(bpy.types.Operator):
             if strip.type == "IMAGE":
                 filepath = os.path.join(strip.directory, strip.elements[0].filename)
                 props = context.scene.vse_image_anim_props
-                props.update_image_size(filepath)
+                props.filepath = filepath
+                props.update_image_size()
                 props.in_w, props.in_h = props.img_w, props.img_h
                 props.keep_w, props.keep_h = props.img_w, props.img_h
                 props.out_w, props.out_h = props.img_w, props.img_h
@@ -364,21 +364,26 @@ class VSE_OT_add_image_with_anim(bpy.types.Operator):
     bl_label = "Add Image With Animation"
     bl_description = "Insert the selected image with in/out animations"
 
-    def set_transform_easing(
+    def set_ease(
         self,
         strip,
-        prop: str | list[str],
-        interpolation: str,
-        easing: str,
+        data_path,
+        frame_start,
+        frame_end,
+        interpolation="BEZIER",
+        easing="EASE_OUT",
     ):
-        prop = [prop] if isinstance(prop, str) else prop
-        index = [index] if isinstance(index, int) else index
-        action = strip.animation_data.action
-        for fcurve in action.fcurves:
-            if fcurve.data_path in prop:
-                for kp in fcurve.keyframe_points:
+        scene = bpy.context.scene
+        if not scene.animation_data or not scene.animation_data.action:
+            return
+        full_path = f'sequence_editor.sequences_all["{strip.name}"].{data_path}'
+        fc = scene.animation_data.action.fcurves.find(full_path)
+        if fc:
+            for kp in fc.keyframe_points:
+                if frame_start <= kp.co.x <= frame_end:
                     kp.interpolation = interpolation
                     kp.easing = easing
+            fc.update()
 
     def insert_keyframe(
         self,
@@ -412,14 +417,11 @@ class VSE_OT_add_image_with_anim(bpy.types.Operator):
             setattr(strip.transform, k, v)
             strip.transform.keyframe_insert(data_path=k, frame=f)
 
-        # self.set_segment_easing(
-        #     transform,
-        #     ["alpha", "position_x", "offset_y"],
-        #     "BEZIER",
-        #     "EASE_IN_OUT",
-        # )
-        # self.set_segment_easing(transform, ["scale_x", "scale_y"], "BEZIER", "EASE_OUT")
-        # self.set_segment_easing(transform, "rotation", "LINEAR", "NONE")
+        for p in ["blend_alpha", "transform.offset_x", "transform.offset_y"]:
+            self.set_ease(strip, p, frame[0], frame[1], "BEZIER", "EASE_IN_OUT")
+        for p in ["transform.scale_x", "transform.scale_y"]:
+            self.set_ease(strip, p, frame[0], frame[1], "BEZIER", "EASE_OUT")
+        self.set_ease(strip, "transform.rotation", frame[0], frame[1], "BEZIER", "AUTO")
 
     def execute(self, context):
         props = context.scene.vse_image_anim_props
@@ -431,7 +433,6 @@ class VSE_OT_add_image_with_anim(bpy.types.Operator):
 
         if props.in_anim != "NONE":
             props.in_duration = ANIMATE_DURATION
-
         in_anim = props.in_anim
         if in_anim == "NONE":
             pass
@@ -441,33 +442,28 @@ class VSE_OT_add_image_with_anim(bpy.types.Operator):
             if in_anim == "FADE":
                 props.in_w, props.in_h = props.keep_w, props.keep_h
                 props.in_x, props.y = props.keep_x, props.keep_y
-            elif in_anim == "UD":
+            elif in_anim == "UP":
                 props.in_w, props.in_h = props.keep_w, props.keep_h
                 props.in_x, props.in_y = props.keep_x, props.keep_y - SLIDE_OFFSET
-            elif in_anim == "DU":
+            elif in_anim == "DOWN":
                 props.in_w, props.in_h = props.keep_w, props.keep_h
                 props.in_x, props.in_y = props.keep_x, props.keep_y + SLIDE_OFFSET
-            elif in_anim == "LR":
-                props.in_w, props.in_h = props.keep_w, props.keep_h
-                props.in_x, props.in_y = props.keep_x - SLIDE_OFFSET, props.keep_y
-            elif in_anim == "RL":
+            elif in_anim == "LEFT":
                 props.in_w, props.in_h = props.keep_w, props.keep_h
                 props.in_x, props.in_y = props.keep_x + SLIDE_OFFSET, props.keep_y
+            elif in_anim == "RIGHT":
+                props.in_w, props.in_h = props.keep_w, props.keep_h
+                props.in_x, props.in_y = props.keep_x - SLIDE_OFFSET, props.keep_y
             elif in_anim == "Z+":
-                props.in_w = props.keep_w * ZOOM_RATIO
-                props.in_h = props.keep_h * ZOOM_RATIO
+                props.in_w = int(props.keep_w * ZOOM_RATIO)
+                props.in_h = int(props.keep_h * ZOOM_RATIO)
                 props.in_x, props.in_y = props.keep_x, props.keep_y
             elif in_anim == "Z-":
-                props.in_w = props.keep_w * (1 + ZOOM_RATIO)
-                props.in_h = props.keep_h * (1 + ZOOM_RATIO)
+                props.in_w = int(props.keep_w * (2 - ZOOM_RATIO))
+                props.in_h = int(props.keep_h * (2 - ZOOM_RATIO))
                 props.in_x, props.in_y = props.keep_x, props.keep_y
             else:
                 raise ValueError(f"Unexpected in animation type: {in_anim}")
-        print("----")
-        print(props.img_w, props.img_h)
-        print(props.in_w, props.in_h)
-        print(props.keep_w, props.keep_h)
-        print(props.out_w, props.out_h)
 
         if props.out_anim != "NONE":
             props.out_duration = ANIMATE_DURATION
@@ -481,28 +477,25 @@ class VSE_OT_add_image_with_anim(bpy.types.Operator):
             if out_anim == "FADE":
                 props.out_w, props.out_h = props.keep_w, props.keep_h
                 props.out_x, props.out_y = props.keep_x, props.keep_y
-            elif out_anim == "UD":
-                props.out_w, props.out_h = props.keep_w, props.keep_h
-                props.out_x, props.out_y = props.keep_x, props.keep_y - SLIDE_OFFSET
-            elif out_anim == "DU":
+            elif out_anim == "UP":
                 props.out_w, props.out_h = props.keep_w, props.keep_h
                 props.out_x, props.out_y = props.keep_x, props.keep_y + SLIDE_OFFSET
-            elif out_anim == "LR":
+            elif out_anim == "DOWN":
+                props.out_w, props.out_h = props.keep_w, props.keep_h
+                props.out_x, props.out_y = props.keep_x, props.keep_y - SLIDE_OFFSET
+            elif out_anim == "LEFT":
                 props.out_w, props.out_h = props.keep_w, props.keep_h
                 props.out_x, props.out_y = props.keep_x - SLIDE_OFFSET, props.keep_y
-            elif out_anim == "RL":
+            elif out_anim == "RIGHT":
                 props.out_w, props.out_h = props.keep_w, props.keep_h
                 props.out_x, props.out_y = props.keep_x + SLIDE_OFFSET, props.keep_y
             elif out_anim == "Z+":
-                props.out_w, props.out_h = (
-                    props.keep_w * ZOOM_RATIO,
-                    props.keep_h * ZOOM_RATIO,
-                )
+                props.out_w = int(props.keep_w * (2 - ZOOM_RATIO))
+                props.out_h = int(props.keep_h * (2 - ZOOM_RATIO))
                 props.out_x, props.out_y = props.keep_x, props.keep_y
             elif out_anim == "Z-":
-                props.out_w, props.out_h = props.keep_w * (
-                    1 + ZOOM_RATIO
-                ), props.keep_h * (1 + ZOOM_RATIO)
+                props.out_w = int(props.keep_w * ZOOM_RATIO)
+                props.out_h = int(props.keep_h * ZOOM_RATIO)
                 props.out_x, props.out_y = props.keep_x, props.keep_y
             else:
                 raise ValueError(f"Unexpected out animation type: {out_anim}")
@@ -512,16 +505,7 @@ class VSE_OT_add_image_with_anim(bpy.types.Operator):
         keep_frames = int(props.keep_duration * fps)
         out_frames = int(props.out_duration * fps)
 
-        if props.source == "FS":
-            start_frame = context.scene.frame_current
-            img_strip = seq.sequences.new_image(
-                name=filepath.split("/")[-1],
-                filepath=filepath,
-                channel=int(props.channel),
-                frame_start=start_frame,
-            )
-            img_strip.frame_final_duration = in_frames + keep_frames + out_frames
-        elif props.source == "STRIP":
+        if props.source == "STRIP":
             selected_strips = bpy.context.selected_sequences
             if not selected_strips:
                 self.report({"WARNING"}, "No strip selected")
@@ -530,28 +514,27 @@ class VSE_OT_add_image_with_anim(bpy.types.Operator):
                 self.report({"WARNING"}, "Only one image strip is allowed")
                 return {"FINISHED"}
             else:
-                img_strip = selected_strips[0]
-                start_frame = int(img_strip.frame_start)
-                scene = bpy.context.scene
-                seqs = scene.sequence_editor.sequences_all
-                for s in list(seqs):
-                    if s.type == "TRANSFORM" and s.input_1 == img_strip:
-                        scene.sequence_editor.sequences.remove(s)
+                strip = selected_strips[0]
+                start_frame = int(strip.frame_start)
+                channel = strip.channel
+                seq_editor = bpy.context.scene.sequence_editor
+                seq_editor.sequences.remove(strip)
+        elif props.source == "FS":
+            start_frame = context.scene.frame_current
+            channel = int(props.channel)
         else:
             raise ValueError(f"Invalid source: {props.source}")
 
-        # img_strip.animation_offset_start = 0
-        transform = seq.sequences.new_effect(
-            name="Transform",
-            type="TRANSFORM",
-            channel=img_strip.channel + 1,
+        img_strip = seq.sequences.new_image(
+            name=filepath.split("/")[-1],
+            filepath=filepath,
+            channel=channel,
             frame_start=start_frame,
-            seq1=img_strip,
         )
-        transform.blend_type = "ALPHA_OVER"
+        img_strip.frame_final_duration = in_frames + keep_frames + out_frames
 
         self.insert_keyframe(
-            transform,
+            img_strip,
             frame=(start_frame, start_frame + in_frames),
             alpha=(props.in_alpha, props.keep_alpha),
             scale=(props.in_w / props.img_w, props.keep_w / props.img_w),
@@ -561,7 +544,7 @@ class VSE_OT_add_image_with_anim(bpy.types.Operator):
 
         start_frame += in_frames + keep_frames
         self.insert_keyframe(
-            transform,
+            img_strip,
             frame=(start_frame, start_frame + out_frames),
             alpha=(props.keep_alpha, props.out_alpha),
             scale=(props.keep_w / props.img_w, props.out_w / props.img_w),
@@ -628,8 +611,7 @@ class VSE_PT_image_anim_panel(bpy.types.Panel):
         # -------- KEEP --------
         keep_box = layout.box()
         keep_box.label(text="Keep", icon="PAUSE")
-        if props.source == "FS":
-            keep_box.prop(props, "keep_duration")
+        keep_box.prop(props, "keep_duration")
         size_col = keep_box.column(align=True)
         row = size_col.row(align=True)
         row.prop(props, "keep_w", text="W")
