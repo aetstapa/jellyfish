@@ -2,9 +2,9 @@
 # pyright: reportInvalidTypeForm=false
 
 bl_info = {
-    "name": "Image Animation",
+    "name": "Image",
     "author": "Jiaju",
-    "version": (1, 0),
+    "version": (1, 0, 0),
     "blender": (3, 6, 0),
     "location": "Video Sequencer > Sidebar",
     "description": "Insert image animations into VSE",
@@ -18,6 +18,7 @@ from bpy.props import (
     FloatProperty,
     IntProperty,
 )
+from utils import *
 
 ANIMATE_DURATION = 0.5
 SLIDE_OFFSET = 500
@@ -173,7 +174,7 @@ class VSEImageAnimProperties(bpy.types.PropertyGroup):
 # Operator
 # --------------------------
 class VSE_OT_read_img_strip(bpy.types.Operator):
-    bl_idname = "vse.read_img_strip"
+    bl_idname = "jf.image_read_img_strip"
     bl_label = "Read Image Strip"
 
     def execute(self, context):
@@ -192,7 +193,7 @@ class VSE_OT_read_img_strip(bpy.types.Operator):
                 props.in_w, props.in_h = props.img_w, props.img_h
                 props.keep_w, props.keep_h = props.img_w, props.img_h
                 props.out_w, props.out_h = props.img_w, props.img_h
-                fps = bpy.context.scene.render.fps
+                fps = get_fps()
                 duration = strip.frame_final_duration / fps
                 if duration >= ANIMATE_DURATION * 2:
                     props.in_duration = ANIMATE_DURATION
@@ -204,7 +205,7 @@ class VSE_OT_read_img_strip(bpy.types.Operator):
 
 
 class VSE_OT_reset_in_size(bpy.types.Operator):
-    bl_idname = "vse.reset_in_size"
+    bl_idname = "jf.image_reset_in_size"
     bl_label = "Reset In Size"
 
     def execute(self, context):
@@ -214,7 +215,7 @@ class VSE_OT_reset_in_size(bpy.types.Operator):
 
 
 class VSE_OT_in_size_cover(bpy.types.Operator):
-    bl_idname = "vse.in_size_cover"
+    bl_idname = "jf.image_in_size_cover"
     bl_label = "In Size Cover Screen"
 
     def execute(self, context):
@@ -230,7 +231,7 @@ class VSE_OT_in_size_cover(bpy.types.Operator):
 
 
 class VSE_OT_in_size_contain(bpy.types.Operator):
-    bl_idname = "vse.in_size_contain"
+    bl_idname = "jf.image_in_size_contain"
     bl_label = "In Size Contain Screen"
 
     def execute(self, context):
@@ -246,7 +247,7 @@ class VSE_OT_in_size_contain(bpy.types.Operator):
 
 
 class VSE_OT_reset_in_size_by_gap(bpy.types.Operator):
-    bl_idname = "vse.reset_in_size_by_gap"
+    bl_idname = "jf.image_reset_in_size_by_gap"
     bl_label = "Reset In Size By Gap"
 
     def execute(self, context):
@@ -256,7 +257,7 @@ class VSE_OT_reset_in_size_by_gap(bpy.types.Operator):
 
 
 class VSE_OT_keep_size_cover(bpy.types.Operator):
-    bl_idname = "vse.keep_size_cover"
+    bl_idname = "jf.image_keep_size_cover"
     bl_label = "Keep Size Cover Screen"
 
     def execute(self, context):
@@ -272,7 +273,7 @@ class VSE_OT_keep_size_cover(bpy.types.Operator):
 
 
 class VSE_OT_keep_size_contain(bpy.types.Operator):
-    bl_idname = "vse.keep_size_contain"
+    bl_idname = "jf.image_keep_size_contain"
     bl_label = "Keep Size Contain Screen"
 
     def execute(self, context):
@@ -288,7 +289,7 @@ class VSE_OT_keep_size_contain(bpy.types.Operator):
 
 
 class VSE_OT_reset_keep_size(bpy.types.Operator):
-    bl_idname = "vse.reset_keep_size"
+    bl_idname = "jf.image_reset_keep_size"
     bl_label = "Reset Keep Size"
 
     def execute(self, context):
@@ -298,7 +299,7 @@ class VSE_OT_reset_keep_size(bpy.types.Operator):
 
 
 class VSE_OT_reset_keep_size_by_gap(bpy.types.Operator):
-    bl_idname = "vse.reset_keep_size_by_gap"
+    bl_idname = "jf.image_reset_keep_size_by_gap"
     bl_label = "Reset Keep Size By Gap"
 
     def execute(self, context):
@@ -308,7 +309,7 @@ class VSE_OT_reset_keep_size_by_gap(bpy.types.Operator):
 
 
 class VSE_OT_reset_out_size(bpy.types.Operator):
-    bl_idname = "vse.reset_out_size"
+    bl_idname = "jf.image_reset_out_size"
     bl_label = "Reset Out Size"
 
     def execute(self, context):
@@ -318,7 +319,7 @@ class VSE_OT_reset_out_size(bpy.types.Operator):
 
 
 class VSE_OT_out_size_cover(bpy.types.Operator):
-    bl_idname = "vse.out_size_cover"
+    bl_idname = "jf.image_out_size_cover"
     bl_label = "Out Size Cover Screen"
 
     def execute(self, context):
@@ -334,7 +335,7 @@ class VSE_OT_out_size_cover(bpy.types.Operator):
 
 
 class VSE_OT_out_size_contain(bpy.types.Operator):
-    bl_idname = "vse.out_size_contain"
+    bl_idname = "jf.image_out_size_contain"
     bl_label = "Out Size Contain Screen"
 
     def execute(self, context):
@@ -350,7 +351,7 @@ class VSE_OT_out_size_contain(bpy.types.Operator):
 
 
 class VSE_OT_reset_out_size_by_gap(bpy.types.Operator):
-    bl_idname = "vse.reset_out_size_by_gap"
+    bl_idname = "jf.image_reset_out_size_by_gap"
     bl_label = "Reset Out Size By Gap"
 
     def execute(self, context):
@@ -360,7 +361,7 @@ class VSE_OT_reset_out_size_by_gap(bpy.types.Operator):
 
 
 class VSE_OT_add_image_with_anim(bpy.types.Operator):
-    bl_idname = "vse.add_image_anim"
+    bl_idname = "jf.image_add_image_anim"
     bl_label = "Add Image With Animation"
     bl_description = "Insert the selected image with in/out animations"
 
@@ -500,7 +501,7 @@ class VSE_OT_add_image_with_anim(bpy.types.Operator):
             else:
                 raise ValueError(f"Unexpected out animation type: {out_anim}")
 
-        fps = context.scene.render.fps
+        fps = get_fps()
         in_frames = int(props.in_duration * fps)
         keep_frames = int(props.keep_duration * fps)
         out_frames = int(props.out_duration * fps)
@@ -562,8 +563,8 @@ class VSE_OT_add_image_with_anim(bpy.types.Operator):
 class VSE_PT_image_anim_panel(bpy.types.Panel):
     bl_space_type = "SEQUENCE_EDITOR"
     bl_region_type = "UI"
-    bl_category = "Image Anim"
-    bl_label = "Image Animation Inserter"
+    bl_category = "Jellyfish"
+    bl_label = "Image"
 
     def draw(self, context):
         layout = self.layout
@@ -575,7 +576,7 @@ class VSE_PT_image_anim_panel(bpy.types.Panel):
             source_box.prop(props, "channel")
             source_box.prop(props, "filepath")
         else:
-            source_box.operator("vse.read_img_strip", text="", icon="EYEDROPPER")
+            source_box.operator("jf.image_read_img_strip", text="", icon="EYEDROPPER")
 
         ow, oh = props.img_w, props.img_h
 
@@ -592,12 +593,16 @@ class VSE_PT_image_anim_panel(bpy.types.Panel):
             row.prop(props, "in_h", text="H")
             size_row1 = size_col.row(align=True)
             size_row1.operator(
-                "vse.reset_in_size_by_gap", text="Gap", icon="FULLSCREEN_EXIT"
+                "jf.image_reset_in_size_by_gap", text="Gap", icon="FULLSCREEN_EXIT"
             )
-            size_row1.operator("vse.reset_in_size", text="Reset", icon="LOOP_BACK")
+            size_row1.operator("jf.image_reset_in_size", text="Reset", icon="LOOP_BACK")
             size_row2 = size_col.row(align=True)
-            size_row2.operator("vse.in_size_cover", text="Cover", icon="CLIPUV_DEHLT")
-            size_row2.operator("vse.in_size_contain", text="Contain", icon="CLIPUV_HLT")
+            size_row2.operator(
+                "jf.image_in_size_cover", text="Cover", icon="CLIPUV_DEHLT"
+            )
+            size_row2.operator(
+                "jf.image_in_size_contain", text="Contain", icon="CLIPUV_HLT"
+            )
             w, h = props.in_w, props.in_h
             if w > ow or h > oh:
                 in_box.label(text="Out of origin size", icon="ERROR")
@@ -618,12 +623,16 @@ class VSE_PT_image_anim_panel(bpy.types.Panel):
         row.prop(props, "keep_h", text="H")
         size_row1 = size_col.row(align=True)
         size_row1.operator(
-            "vse.reset_keep_size_by_gap", text="Gap", icon="FULLSCREEN_EXIT"
+            "jf.image_reset_keep_size_by_gap", text="Gap", icon="FULLSCREEN_EXIT"
         )
-        size_row1.operator("vse.reset_keep_size", text="Reset", icon="LOOP_BACK")
+        size_row1.operator("jf.image_reset_keep_size", text="Reset", icon="LOOP_BACK")
         size_row2 = size_col.row(align=True)
-        size_row2.operator("vse.keep_size_cover", text="Cover", icon="CLIPUV_DEHLT")
-        size_row2.operator("vse.keep_size_contain", text="Contain", icon="CLIPUV_HLT")
+        size_row2.operator(
+            "jf.image_keep_size_cover", text="Cover", icon="CLIPUV_DEHLT"
+        )
+        size_row2.operator(
+            "jf.image_keep_size_contain", text="Contain", icon="CLIPUV_HLT"
+        )
         w, h = props.keep_w, props.keep_h
         if w > ow or h > oh:
             keep_box.label(text="Out of origin size", icon="ERROR")
@@ -647,13 +656,17 @@ class VSE_PT_image_anim_panel(bpy.types.Panel):
             row.prop(props, "out_h", text="H")
             size_row1 = size_col.row(align=True)
             size_row1.operator(
-                "vse.reset_out_size_by_gap", text="Gap", icon="FULLSCREEN_EXIT"
+                "jf.image_reset_out_size_by_gap", text="Gap", icon="FULLSCREEN_EXIT"
             )
-            size_row1.operator("vse.reset_out_size", text="Reset", icon="LOOP_BACK")
+            size_row1.operator(
+                "jf.image_reset_out_size", text="Reset", icon="LOOP_BACK"
+            )
             size_row2 = size_col.row(align=True)
-            size_row2.operator("vse.out_size_cover", text="Cover", icon="CLIPUV_DEHLT")
             size_row2.operator(
-                "vse.out_size_contain", text="Contain", icon="CLIPUV_HLT"
+                "jf.image_out_size_cover", text="Cover", icon="CLIPUV_DEHLT"
+            )
+            size_row2.operator(
+                "jf.image_out_size_contain", text="Contain", icon="CLIPUV_HLT"
             )
             w, h = props.out_w, props.out_h
             if w > ow or h > oh:
@@ -666,7 +679,7 @@ class VSE_PT_image_anim_panel(bpy.types.Panel):
             row.prop(props, "out_rotation")
 
         layout.separator()
-        layout.operator("vse.add_image_anim", text="Insert")
+        layout.operator("jf.image_add_image_anim", text="Insert")
 
 
 # --------------------------
