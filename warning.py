@@ -5,6 +5,8 @@ class Warning(Scene):
     def construct(self):
         # FAFAFA
         self.camera.background_rgba = [250 / 255, 250 / 255, 250 / 255, 1]
+        self.camera.fps = 30
+
         font_size = 40
         font_color = "#0F1419"
         # font_family = "LXGW WenKai"
