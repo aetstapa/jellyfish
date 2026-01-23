@@ -3,14 +3,16 @@ from manimlib import *
 
 class Warning(Scene):
     def construct(self):
-        self.camera.background_rgba = [1, 1, 1, 1]
+        # FAFAFA
+        self.camera.background_rgba = [250 / 255, 250 / 255, 250 / 255, 1]
         font_size = 40
-        font_color = "#2B2B2B"
-        font_family = "LXGW WenKai"
+        font_color = "#0F1419"
+        # font_family = "LXGW WenKai"
+        font_family = "Kaiti SC"
 
         rules = [
-            "1、内部康复资料，私自观看，造成不良后果自负，本院概不负责",
-            "2、很多知识是现学现卖，难免出错，请各位病友秉持怀疑精神",
+            "1、内部康复资料，私自观看，后果自负，本院概不负责",
+            "2、很多知识是现学现卖，难免出错，请各位病友秉持怀疑之神经",
             "3、内容有点荒诞庸俗，请不满十八岁的大宝贝在父母陪同下观看",
         ]
 

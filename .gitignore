@@ -1,4 +1,5 @@
 .DS_Store
-videos/
 __pycache__
-assets
+media/
+videos/
+assets/
