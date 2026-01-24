@@ -38,7 +38,7 @@ def get_default_font_dir():
         return os.path.expanduser("~")
 
 
-class VSETextProperties(bpy.types.PropertyGroup):
+class JFTextProps(bpy.types.PropertyGroup):
     source: EnumProperty(
         name="Source",
         description="Image source",
@@ -277,21 +277,35 @@ class VSE_OT_InsertText(bpy.types.Operator):
         text_strip.location = location
         text_strip.align_x, text_strip.align_y = anchor
 
-        sw, sh = get_screen_size(context)
-        px_x, px_y = x * sw, y * sh
         offset = 30
         insert_keyframe(
             text_strip,
-            frame=(frame_start, frame_start + int(ANIM_TIME * fps)),
-            alpha=(0, 1),
-            pos=((0, offset), (0, 0)),
+            frame=frame_start,
+            alpha=0,
+            offset_x=0,
+            offset_y=offset,
+        )
+        insert_keyframe(
+            text_strip,
+            frame=frame_start + int(ANIM_TIME * fps),
+            alpha=1,
+            offset_x=0,
+            offset_y=0,
         )
         frame_start = text_strip.frame_final_end - int(ANIM_TIME * fps)
         insert_keyframe(
             text_strip,
-            frame=(frame_start, text_strip.frame_final_end),
-            alpha=(1, 0),
-            pos=((0, 0), (0, -offset)),
+            frame=frame_start,
+            alpha=1,
+            offset_x=0,
+            offset_y=0,
+        )
+        insert_keyframe(
+            text_strip,
+            frame=text_strip.frame_final_end,
+            alpha=0,
+            offset_x=0,
+            offset_y=-offset,
         )
 
         self.report({"INFO"}, f"Inserted text strip: {props.text}")
@@ -338,7 +352,7 @@ class VSE_PT_TextPanel(bpy.types.Panel):
 
 
 classes = (
-    VSETextProperties,
+    JFTextProps,
     VSE_OT_ReadText,
     VSE_OT_SelectFontPath,
     VSE_OT_SmallFontSize,
@@ -352,7 +366,7 @@ classes = (
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
-    bpy.types.Scene.jf_text_props = bpy.props.PointerProperty(type=VSETextProperties)
+    bpy.types.Scene.jf_text_props = bpy.props.PointerProperty(type=JFTextProps)
 
 
 def unregister():

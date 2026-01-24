@@ -11,34 +11,25 @@ bl_info = {
     "category": "Sequencer",
 }
 
-import bpy, math, os
+import bpy, os
 from bpy.props import (
     StringProperty,
     EnumProperty,
     FloatProperty,
     IntProperty,
+    BoolProperty,
 )
 from utils import *
 
-ANIMATE_DURATION = 0.5
-SLIDE_OFFSET = 500
+IN_TIME = 0.5
+SLIDE_OFFSET = 200
 ZOOM_RATIO = 0.4
 
 
 # --------------------------
 # Properties
 # --------------------------
-class VSEImageAnimProperties(bpy.types.PropertyGroup):
-    source: EnumProperty(
-        name="Source",
-        description="Image source",
-        items=[
-            ("FS", "File System", ""),
-            ("STRIP", "Strip", ""),
-        ],
-        default="FS",
-    )
-
+class JFImageProps(bpy.types.PropertyGroup):
     channel: EnumProperty(
         name="Channel",
         description="Select the channel to insert the image",
@@ -50,7 +41,7 @@ class VSEImageAnimProperties(bpy.types.PropertyGroup):
 
     filepath: StringProperty(
         name="Image",
-        description="Select an image",
+        description="Select an image strip",
         subtype="FILE_PATH",
         update=lambda self, context: self.update_image_size(),
     )
@@ -60,83 +51,118 @@ class VSEImageAnimProperties(bpy.types.PropertyGroup):
 
     gap: IntProperty(name="Image Gap", default=100)
 
-    in_anim: EnumProperty(
+    anim_type: EnumProperty(
         name="Animation",
-        description="Animation type when image ins",
+        description="Animation quick setting",
         items=[
-            ("NONE", "None", ""),
-            ("FADE", "Fade In", ""),
-            ("UP", "Up", ""),
-            ("DOWN", "Down", ""),
-            ("LEFT", "Left", ""),
-            ("RIGHT", "Right", ""),
-            ("Z+", "Zoom+", ""),
-            ("Z-", "Zoom-", ""),
+            ("MOV_LEFT", "Move to LEFT", ""),
+            ("MOV_RIGHT", "Move to RIGHT", ""),
+            ("MOV_UP", "Move to UP", ""),
+            ("MOV_DOWN", "Move to DOWN", ""),
+            ("FADE", "Fade IN and OUT", ""),
+            ("UD", "UP in, DOWN out", ""),
+            ("DU", "DOWN in, UP out", ""),
+            ("LR", "LEFT in, RIGHT out", ""),
+            ("RL", "RIGHT in, LEFT out", ""),
+            ("ZOOM+", "ZOOM+ in, ZOOM+ out", ""),
+            ("ZOOM-", "ZOOM- in, ZOOM- out", ""),
         ],
     )
 
-    in_duration: FloatProperty(
-        name="Duration",
-        default=ANIMATE_DURATION,
-        min=0.1,
-        description="Duration of in animation (seconds)",
+    size_type: EnumProperty(
+        name="Size",
+        description="Size type setting",
+        items=[
+            ("COVER", "Cover", ""),
+            ("CONTAIN", "Contain", ""),
+            ("GAP", "Gap", ""),
+        ],
     )
-    in_w: IntProperty(name="Width", min=0, default=0)
-    in_h: IntProperty(name="Height", min=0, default=0)
-    in_x: IntProperty(name="X", default=0)
-    in_y: IntProperty(name="Y", default=0)
-    in_alpha: FloatProperty(
+
+    k1_w: IntProperty(name="Width", min=0, default=0)
+    k1_h: IntProperty(name="Height", min=0, default=0)
+    k1_x: IntProperty(name="X", default=0)
+    k1_y: IntProperty(name="Y", default=0)
+    k1_a: FloatProperty(
         name="Alpha", min=0.0, max=1.0, default=0.0, description="Transparency"
     )
-    in_rotation: FloatProperty(name="Rotation", default=0.0, description="Rotation")
+    k1_r: FloatProperty(name="Rotation", default=0.0, description="Rotation")
+    k1_enable_rotation: BoolProperty(name="Enable Rotation", default=True)
 
-    keep_duration: FloatProperty(
+    k12_t: FloatProperty(
+        name="Duration",
+        default=IN_TIME,
+        min=0.1,
+        description="Duration from k1 to k2",
+    )
+
+    k2_w: IntProperty(name="Width", min=0, default=0)
+    k2_h: IntProperty(name="Height", min=0, default=0)
+    k2_x: IntProperty(name="X", default=0)
+    k2_y: IntProperty(name="Y", default=0)
+    k2_a: FloatProperty(
+        name="Alpha", min=0.0, max=1.0, default=1.0, description="Transparency"
+    )
+    k2_r: FloatProperty(name="Rotation", default=0.0, description="Rotation")
+    k2_enable_pos: BoolProperty(name="Enable Position", default=True)
+    k2_enable_size: BoolProperty(name="Enable Size", default=True)
+    k2_enable_alpha: BoolProperty(name="Enable Alpha", default=True)
+    k2_enable_rotation: BoolProperty(name="Enable Rotation", default=True)
+
+    k23_t: FloatProperty(
         name="Duration",
         default=2.0,
         min=0.1,
-        description="How long to keep the image visible",
-    )
-    keep_w: IntProperty(name="Width", min=0, default=0)
-    keep_h: IntProperty(name="Height", min=0, default=0)
-    keep_x: IntProperty(name="X", default=0)
-    keep_y: IntProperty(name="Y", default=0)
-    keep_alpha: FloatProperty(
-        name="Alpha", min=0.0, max=1.0, default=1.0, description="Transparency"
-    )
-    keep_rotation: FloatProperty(name="Rotation", default=0.0, description="Rotation")
-
-    out_anim: EnumProperty(
-        name="Animation",
-        description="Animation type when image outs",
-        items=[
-            ("NONE", "None", ""),
-            ("FADE", "Fade Out", ""),
-            ("UP", "Up", ""),
-            ("DOWN", "Down", ""),
-            ("LEFT", "Left", ""),
-            ("RIGHT", "Right", ""),
-            ("Z+", "Zoom+", ""),
-            ("Z-", "Zoom-", ""),
-        ],
+        description="Duration from k2 to k3",
     )
 
-    out_duration: FloatProperty(
+    k3_t: FloatProperty(
         name="Duration",
-        default=ANIMATE_DURATION,
+        default=IN_TIME,
         min=0.1,
         description="Duration of out animation (seconds)",
     )
-    out_w: IntProperty(name="Width", min=0, default=0)
-    out_h: IntProperty(name="Height", min=0, default=0)
-    out_x: IntProperty(name="X", default=0)
-    out_y: IntProperty(name="Y", default=0)
-    out_alpha: FloatProperty(
+    k3_w: IntProperty(name="Width", min=0, default=0)
+    k3_h: IntProperty(name="Height", min=0, default=0)
+    k3_x: IntProperty(name="X", default=0)
+    k3_y: IntProperty(name="Y", default=0)
+    k3_a: FloatProperty(
+        name="Alpha", min=0.0, max=1.0, default=1.0, description="Transparency"
+    )
+    k3_r: FloatProperty(name="Rotation", default=0.0, description="Rotation")
+    same_with_k2: BoolProperty(
+        name="Same with K2", default=False, description="Same params with K2 keyframe"
+    )
+    k3_enable_pos: BoolProperty(name="Enable Position", default=True)
+    k3_enable_size: BoolProperty(name="Enable Size", default=True)
+    k3_enable_alpha: BoolProperty(name="Enable Alpha", default=True)
+    k3_enable_rotation: BoolProperty(name="Enable Rotation", default=True)
+
+    k34_t: FloatProperty(
+        name="Duration",
+        default=IN_TIME,
+        min=0.1,
+        description="Duration from k3 to k4",
+    )
+
+    k4_w: IntProperty(name="Width", min=0, default=0)
+    k4_h: IntProperty(name="Height", min=0, default=0)
+    k4_x: IntProperty(name="X", default=0)
+    k4_y: IntProperty(name="Y", default=0)
+    k4_a: FloatProperty(
         name="Alpha", min=0.0, max=1.0, default=0.0, description="Transparency"
     )
-    out_rotation: FloatProperty(name="Rotation", default=0.0, description="Rotation")
+    k4_r: FloatProperty(name="Rotation", default=0.0, description="Rotation")
+    k4_enable_rotation: BoolProperty(name="Enable Rotation", default=True)
+
+    def check_filepath(self):
+        if not self.filepath:
+            self.report({"WARNING"}, "No strip inspected")
+            return False
+        return True
 
     def update_image_size(self):
-        if not self.filepath:
+        if not self.check_filepath():
             return
         path = bpy.path.abspath(self.filepath)
         try:
@@ -145,21 +171,18 @@ class VSEImageAnimProperties(bpy.types.PropertyGroup):
                 img = bpy.data.images.load(path)
             w, h = img.size[0], img.size[1]
             self.img_w, self.img_h = w, h
-            self.in_w, self.in_h = w, h
-            self.keep_w, self.keep_h = w, h
-            self.out_w, self.out_h = w, h
+            self.k1_w, self.k1_h = w, h
+            self.k2_w, self.k2_h = w, h
+            self.k4_w, self.k4_h = w, h
         except:
             self.img_w, self.img_h = 0, 0
 
-    def get_screen_size(self, context):
-        render = context.scene.render
-        return (render.resolution_x, render.resolution_y)
-
-    def calc_img_size_with_gap(self, context):
-        if not self.filepath:
+    def calc_gap_size(self, context):
+        if not self.check_filepath():
+            self.report({"WARNING"}, "No strip inspected")
             return
         w, h = self.img_w, self.img_h
-        sw, sh = self.get_screen_size(context)
+        sw, sh = get_screen_size(context)
         aw = min(sw - self.gap * 2, w)
         ah = min(sh - self.gap * 2, h)
 
@@ -169,13 +192,27 @@ class VSEImageAnimProperties(bpy.types.PropertyGroup):
         r2 = w / h
         return (int(ah / h * w), ah) if r1 > r2 else (aw, int(aw / w * h))
 
+    def calc_cover_size(self, context):
+        sw, sh = get_screen_size(context)
+        w, h = self.img_w, self.img_h
+        r1 = sw / sh
+        r2 = w / h
+        return (int(sh / h * w), sh) if r1 >= r2 else (sw, int(sw / w * h))
+
+    def calc_contain_size(self, context):
+        sw, sh = get_screen_size(context)
+        w, h = self.img_w, self.img_h
+        r1 = sw / sh
+        r2 = w / h
+        return (int(sh / h * w), sh) if r1 <= r2 else (sw, int(sw / w * h))
+
 
 # --------------------------
 # Operator
 # --------------------------
-class VSE_OT_read_img_strip(bpy.types.Operator):
-    bl_idname = "jf.image_read_img_strip"
-    bl_label = "Read Image Strip"
+class JF_OT_quick_set(bpy.types.Operator):
+    bl_idname = "jf.image_quick_set"
+    bl_label = "Quick Set by Animation Type"
 
     def execute(self, context):
         selected_strips = bpy.context.selected_sequences
@@ -187,180 +224,288 @@ class VSE_OT_read_img_strip(bpy.types.Operator):
             strip = selected_strips[0]
             if strip.type == "IMAGE":
                 filepath = os.path.join(strip.directory, strip.elements[0].filename)
-                props = context.scene.vse_image_anim_props
+                props = context.scene.jf_image_props
                 props.filepath = filepath
                 props.update_image_size()
-                props.in_w, props.in_h = props.img_w, props.img_h
-                props.keep_w, props.keep_h = props.img_w, props.img_h
-                props.out_w, props.out_h = props.img_w, props.img_h
+                props.k1_w, props.k1_h = props.img_w, props.img_h
+                props.k2_w, props.k2_h = props.img_w, props.img_h
+                props.k3_w, props.k3_h = props.img_w, props.img_h
+                props.k4_w, props.k4_h = props.img_w, props.img_h
                 fps = get_fps()
                 duration = strip.frame_final_duration / fps
-                if duration >= ANIMATE_DURATION * 2:
-                    props.in_duration = ANIMATE_DURATION
-                    props.keep_duration = duration - ANIMATE_DURATION * 2
-                    props.out_duration = ANIMATE_DURATION
+                if duration >= IN_TIME * 2:
+                    props.k12_t = IN_TIME
+                    props.k23_t = duration - IN_TIME * 2
+                    props.k34_t = IN_TIME
+                else:
+                    self.report(
+                        {"WARNING"},
+                        f"strip duration too short, less than {IN_TIME * 2}s",
+                    )
             else:
                 self.report({"WARNING"}, "Invalid image strip")
+                return {"FINISHED"}
+
+        props = context.scene.jf_image_props
+        if not props.check_filepath():
+            return {"FINISHED"}
+
+        type = props.anim_type
+        size_type = props.size_type
+
+        if size_type == "COVER":
+            w, h = props.calc_cover_size(context)
+        elif size_type == "CONTAIN":
+            w, h = props.calc_contain_size(context)
+        elif size_type == "GAP":
+            w, h = props.calc_gap_size(context)
+        else:
+            self.report({"ERROR"}, "Unknown size type")
+            return {"FINISHED"}
+        props.k1_w, props.k1_h = w, h
+        props.k1_x, props.k1_y = 0, 0
+        props.k1_a = 0
+        props.k1_enable_rotation = False
+
+        props.k2_w, props.k2_h = w, h
+        props.k2_x, props.k2_y = 0, 0
+        props.k2_a = 1
+        props.k2_enable_rotation = False
+
+        props.k3_w, props.k3_h = w, h
+        props.k3_x, props.k3_y = 0, 0
+        props.k3_a = 1
+        props.k3_enable_rotation = False
+
+        props.k4_w, props.k4_h = w, h
+        props.k4_x, props.k4_y = 0, 0
+        props.k4_a = 0
+        props.k4_enable_rotation = False
+
+        mov_scale = 1.2
+        if type.startswith("MOV"):
+            props.k4_w = int(w * mov_scale)
+            props.k4_h = int(h * mov_scale)
+            props.k2_enable_pos = False
+            props.k2_enable_size = False
+            props.k3_enable_pos = False
+            props.k3_enable_size = False
+        else:
+            props.k2_enable_pos = True
+            props.k2_enable_size = True
+            props.k3_enable_pos = True
+            props.k3_enable_size = True
+
+        if type == "MOV_LEFT":
+            props.k4_x = -SLIDE_OFFSET
+            props.k4_y = 0
+        elif type == "MOV_RIGHT":
+            props.k4_x = SLIDE_OFFSET
+            props.k4_y = 0
+        elif type == "MOV_UP":
+            props.k4_x = 0
+            props.k4_y = SLIDE_OFFSET
+        elif type == "MOV_DOWN":
+            props.k4_x = 0
+            props.k4_y = -SLIDE_OFFSET
+        elif type == "FADE":
+            pass
+        elif type == "UD":
+            props.k1_x = 0
+            props.k1_y = SLIDE_OFFSET
+            props.k4_x = 0
+            props.k4_y = -SLIDE_OFFSET
+        elif type == "DU":
+            props.k1_x = 0
+            props.k1_y = -SLIDE_OFFSET
+            props.k4_x = 0
+            props.k4_y = SLIDE_OFFSET
+        elif type == "LR":
+            props.k1_x = -SLIDE_OFFSET
+            props.k1_y = 0
+            props.k4_x = SLIDE_OFFSET
+            props.k4_y = 0
+        elif type == "RL":
+            props.k1_x = SLIDE_OFFSET
+            props.k1_y = 0
+            props.k4_x = -SLIDE_OFFSET
+            props.k4_y = 0
+        elif type == "ZOOM+":
+            props.k1_w = int(w * ZOOM_RATIO)
+            props.k1_h = int(h * ZOOM_RATIO)
+            props.k4_w = int(w * (1 + ZOOM_RATIO))
+            props.k4_h = int(h * (1 + ZOOM_RATIO))
+        elif type == "ZOOM-":
+            props.k1_w = int(w * (1 + ZOOM_RATIO))
+            props.k1_h = int(h * (1 + ZOOM_RATIO))
+            props.k4_w = int(w * ZOOM_RATIO)
+            props.k4_h = int(h * ZOOM_RATIO)
+        else:
+            self.report({"ERROR"}, "Unknown animation type")
         return {"FINISHED"}
 
 
-class VSE_OT_reset_in_size(bpy.types.Operator):
-    bl_idname = "jf.image_reset_in_size"
+class JF_OT_k1_size_origin(bpy.types.Operator):
+    bl_idname = "jf.image_k1_size_origin"
     bl_label = "Reset In Size"
 
     def execute(self, context):
-        props = context.scene.vse_image_anim_props
-        props.in_w, props.in_h = props.img_w, props.img_h
+        props = context.scene.jf_image_props
+        props.k1_w, props.k1_h = props.img_w, props.img_h
         return {"FINISHED"}
 
 
-class VSE_OT_in_size_cover(bpy.types.Operator):
-    bl_idname = "jf.image_in_size_cover"
+class JF_OT_k1_size_cover(bpy.types.Operator):
+    bl_idname = "jf.image_k1_size_cover"
     bl_label = "In Size Cover Screen"
 
     def execute(self, context):
-        props = context.scene.vse_image_anim_props
-        sw, sh = props.get_screen_size(context)
-        w, h = props.img_w, props.img_h
-        r1 = sw / sh
-        r2 = w / h
-        props.in_w, props.in_h = (
-            (int(sh / h * w), sh) if r1 >= r2 else (sw, int(sw / w * h))
-        )
+        props = context.scene.jf_image_props
+        props.k1_w, props.k1_h = props.calc_cover_size(context)
         return {"FINISHED"}
 
 
-class VSE_OT_in_size_contain(bpy.types.Operator):
-    bl_idname = "jf.image_in_size_contain"
+class JF_OT_k1_size_contain(bpy.types.Operator):
+    bl_idname = "jf.image_k1_size_contain"
     bl_label = "In Size Contain Screen"
 
     def execute(self, context):
-        props = context.scene.vse_image_anim_props
-        sw, sh = props.get_screen_size(context)
-        w, h = props.img_w, props.img_h
-        r1 = sw / sh
-        r2 = w / h
-        props.in_w, props.in_h = (
-            (int(sh / h * w), sh) if r1 <= r2 else (sw, int(sw / w * h))
-        )
+        props = context.scene.jf_image_props
+        props.k1_w, props.k1_h = props.calc_contain_size(context)
         return {"FINISHED"}
 
 
-class VSE_OT_reset_in_size_by_gap(bpy.types.Operator):
-    bl_idname = "jf.image_reset_in_size_by_gap"
+class JF_OT_k1_size_gap(bpy.types.Operator):
+    bl_idname = "jf.image_k1_size_gap"
     bl_label = "Reset In Size By Gap"
 
     def execute(self, context):
-        props = context.scene.vse_image_anim_props
-        props.in_w, props.in_h = props.calc_img_size_with_gap(context)
+        props = context.scene.jf_image_props
+        props.k1_w, props.k1_h = props.calc_gap_size(context)
         return {"FINISHED"}
 
 
-class VSE_OT_keep_size_cover(bpy.types.Operator):
-    bl_idname = "jf.image_keep_size_cover"
+class JF_OT_k2_size_cover(bpy.types.Operator):
+    bl_idname = "jf.image_k2_size_cover"
     bl_label = "Keep Size Cover Screen"
 
     def execute(self, context):
-        props = context.scene.vse_image_anim_props
-        sw, sh = props.get_screen_size(context)
-        w, h = props.img_w, props.img_h
-        r1 = sw / sh
-        r2 = w / h
-        props.keep_w, props.keep_h = (
-            (int(sh / h * w), sh) if r1 >= r2 else (sw, int(sw / w * h))
-        )
+        props = context.scene.jf_image_props
+        props.k2_w, props.k2_h = props.calc_cover_size(context)
         return {"FINISHED"}
 
 
-class VSE_OT_keep_size_contain(bpy.types.Operator):
-    bl_idname = "jf.image_keep_size_contain"
+class JF_OT_k2_size_contain(bpy.types.Operator):
+    bl_idname = "jf.image_k2_size_contain"
     bl_label = "Keep Size Contain Screen"
 
     def execute(self, context):
-        props = context.scene.vse_image_anim_props
-        sw, sh = props.get_screen_size(context)
-        w, h = props.img_w, props.img_h
-        r1 = sw / sh
-        r2 = w / h
-        props.keep_w, props.keep_h = (
-            (int(sh / h * w), sh) if r1 <= r2 else (sw, int(sw / w * h))
-        )
+        props = context.scene.jf_image_props
+        props.k2_w, props.k2_h = props.calc_contain_size(context)
         return {"FINISHED"}
 
 
-class VSE_OT_reset_keep_size(bpy.types.Operator):
-    bl_idname = "jf.image_reset_keep_size"
+class JF_OT_k2_size_origin(bpy.types.Operator):
+    bl_idname = "jf.image_k2_size_origin"
     bl_label = "Reset Keep Size"
 
     def execute(self, context):
-        props = context.scene.vse_image_anim_props
-        props.keep_w, props.keep_h = props.img_w, props.img_h
+        props = context.scene.jf_image_props
+        props.k2_w, props.k2_h = props.img_w, props.img_h
         return {"FINISHED"}
 
 
-class VSE_OT_reset_keep_size_by_gap(bpy.types.Operator):
-    bl_idname = "jf.image_reset_keep_size_by_gap"
+class JF_OT_k2_size_gap(bpy.types.Operator):
+    bl_idname = "jf.image_k2_size_gap"
     bl_label = "Reset Keep Size By Gap"
 
     def execute(self, context):
-        props = context.scene.vse_image_anim_props
-        props.keep_w, props.keep_h = props.calc_img_size_with_gap(context)
+        props = context.scene.jf_image_props
+        props.k2_w, props.k2_h = props.calc_gap_size(context)
         return {"FINISHED"}
 
 
-class VSE_OT_reset_out_size(bpy.types.Operator):
-    bl_idname = "jf.image_reset_out_size"
+class JF_OT_k3_size_cover(bpy.types.Operator):
+    bl_idname = "jf.image_k3_size_cover"
+    bl_label = "Keep Size Cover Screen"
+
+    def execute(self, context):
+        props = context.scene.jf_image_props
+        props.k3_w, props.k3_h = props.calc_cover_size(context)
+        return {"FINISHED"}
+
+
+class JF_OT_k3_size_contain(bpy.types.Operator):
+    bl_idname = "jf.image_k3_size_contain"
+    bl_label = "Keep Size Contain Screen"
+
+    def execute(self, context):
+        props = context.scene.jf_image_props
+        props.k3_w, props.k3_h = props.calc_contain_size(context)
+        return {"FINISHED"}
+
+
+class JF_OT_k3_size_origin(bpy.types.Operator):
+    bl_idname = "jf.image_k3_size_origin"
+    bl_label = "Reset Keep Size"
+
+    def execute(self, context):
+        props = context.scene.jf_image_props
+        props.k3_w, props.k3_h = props.img_w, props.img_h
+        return {"FINISHED"}
+
+
+class JF_OT_k3_size_gap(bpy.types.Operator):
+    bl_idname = "jf.image_k3_size_gap"
+    bl_label = "Reset Keep Size By Gap"
+
+    def execute(self, context):
+        props = context.scene.jf_image_props
+        props.k3_w, props.k3_h = props.calc_gap_size(context)
+        return {"FINISHED"}
+
+
+class JF_OT_k4_size_origin(bpy.types.Operator):
+    bl_idname = "jf.image_k4_size_origin"
     bl_label = "Reset Out Size"
 
     def execute(self, context):
-        props = context.scene.vse_image_anim_props
-        props.out_w, props.out_h = props.img_w, props.img_h
+        props = context.scene.jf_image_props
+        props.k4_w, props.k4_h = props.img_w, props.img_h
         return {"FINISHED"}
 
 
-class VSE_OT_out_size_cover(bpy.types.Operator):
-    bl_idname = "jf.image_out_size_cover"
+class JF_OT_k4_size_cover(bpy.types.Operator):
+    bl_idname = "jf.image_k4_size_cover"
     bl_label = "Out Size Cover Screen"
 
     def execute(self, context):
-        props = context.scene.vse_image_anim_props
-        sw, sh = props.get_screen_size(context)
-        w, h = props.img_w, props.img_h
-        r1 = sw / sh
-        r2 = w / h
-        props.out_w, props.out_h = (
-            (int(sh / h * w), sh) if r1 >= r2 else (sw, int(sw / w * h))
-        )
+        props = context.scene.jf_image_props
+        props.k4_w, props.k4_h = props.calc_cover_size(context)
         return {"FINISHED"}
 
 
-class VSE_OT_out_size_contain(bpy.types.Operator):
-    bl_idname = "jf.image_out_size_contain"
+class JF_OT_k4_size_contain(bpy.types.Operator):
+    bl_idname = "jf.image_k4_size_contain"
     bl_label = "Out Size Contain Screen"
 
     def execute(self, context):
-        props = context.scene.vse_image_anim_props
-        sw, sh = props.get_screen_size(context)
-        w, h = props.img_w, props.img_h
-        r1 = sw / sh
-        r2 = w / h
-        props.out_w, props.out_h = (
-            (int(sh / h * w), sh) if r1 <= r2 else (sw, int(sw / w * h))
-        )
+        props = context.scene.jf_image_props
+        props.k4_w, props.k4_h = props.calc_contain_size()
         return {"FINISHED"}
 
 
-class VSE_OT_reset_out_size_by_gap(bpy.types.Operator):
-    bl_idname = "jf.image_reset_out_size_by_gap"
+class JF_OT_k4_size_gap(bpy.types.Operator):
+    bl_idname = "jf.image_k4_size_gap"
     bl_label = "Reset Out Size By Gap"
 
     def execute(self, context):
-        props = context.scene.vse_image_anim_props
-        props.out_w, props.out_h = props.calc_img_size_with_gap(context)
+        props = context.scene.jf_image_props
+        props.k4_w, props.k4_h = props.calc_gap_size(context)
         return {"FINISHED"}
 
 
-class VSE_OT_add_image_with_anim(bpy.types.Operator):
+class JF_OT_add_animation(bpy.types.Operator):
     bl_idname = "jf.image_add_image_anim"
     bl_label = "Add Image With Animation"
     bl_description = "Insert the selected image with in/out animations"
@@ -386,145 +531,33 @@ class VSE_OT_add_image_with_anim(bpy.types.Operator):
                     kp.easing = easing
             fc.update()
 
-    def insert_keyframe(
-        self,
-        strip,
-        frame: (int, int),
-        alpha: (float, float),
-        scale: (float, float),
-        pos: ((int, int), (int, int)),
-        rotation: (float, float),
-    ):
-        params = [
-            (frame[0], "blend_alpha", alpha[0]),
-            (frame[1], "blend_alpha", alpha[1]),
-        ]
-        for f, k, v in params:
-            setattr(strip, k, v)
-            strip.keyframe_insert(data_path=k, frame=f)
-        params = [
-            (frame[0], "scale_x", scale[0]),
-            (frame[0], "scale_y", scale[0]),
-            (frame[0], "offset_x", pos[0][0]),
-            (frame[0], "offset_y", pos[0][1]),
-            (frame[0], "rotation", math.radians(rotation[0])),
-            (frame[1], "scale_x", scale[1]),
-            (frame[1], "scale_y", scale[1]),
-            (frame[1], "offset_x", pos[1][0]),
-            (frame[1], "offset_y", pos[1][1]),
-            (frame[1], "rotation", math.radians(rotation[1])),
-        ]
-        for f, k, v in params:
-            setattr(strip.transform, k, v)
-            strip.transform.keyframe_insert(data_path=k, frame=f)
-
-        for p in ["blend_alpha", "transform.offset_x", "transform.offset_y"]:
-            self.set_ease(strip, p, frame[0], frame[1], "BEZIER", "EASE_IN_OUT")
-        for p in ["transform.scale_x", "transform.scale_y"]:
-            self.set_ease(strip, p, frame[0], frame[1], "BEZIER", "EASE_OUT")
-        self.set_ease(strip, "transform.rotation", frame[0], frame[1], "BEZIER", "AUTO")
-
     def execute(self, context):
-        props = context.scene.vse_image_anim_props
+        props = context.scene.jf_image_props
         filepath = bpy.path.abspath(props.filepath)
 
         seq = context.scene.sequence_editor
         if not seq:
             seq = context.scene.sequence_editor_create()
 
-        if props.in_anim != "NONE":
-            props.in_duration = ANIMATE_DURATION
-        in_anim = props.in_anim
-        if in_anim == "NONE":
-            pass
-        else:
-            props.in_alpha = 0
-            props.in_rotation = props.keep_rotation
-            if in_anim == "FADE":
-                props.in_w, props.in_h = props.keep_w, props.keep_h
-                props.in_x, props.y = props.keep_x, props.keep_y
-            elif in_anim == "UP":
-                props.in_w, props.in_h = props.keep_w, props.keep_h
-                props.in_x, props.in_y = props.keep_x, props.keep_y - SLIDE_OFFSET
-            elif in_anim == "DOWN":
-                props.in_w, props.in_h = props.keep_w, props.keep_h
-                props.in_x, props.in_y = props.keep_x, props.keep_y + SLIDE_OFFSET
-            elif in_anim == "LEFT":
-                props.in_w, props.in_h = props.keep_w, props.keep_h
-                props.in_x, props.in_y = props.keep_x + SLIDE_OFFSET, props.keep_y
-            elif in_anim == "RIGHT":
-                props.in_w, props.in_h = props.keep_w, props.keep_h
-                props.in_x, props.in_y = props.keep_x - SLIDE_OFFSET, props.keep_y
-            elif in_anim == "Z+":
-                props.in_w = int(props.keep_w * ZOOM_RATIO)
-                props.in_h = int(props.keep_h * ZOOM_RATIO)
-                props.in_x, props.in_y = props.keep_x, props.keep_y
-            elif in_anim == "Z-":
-                props.in_w = int(props.keep_w * (2 - ZOOM_RATIO))
-                props.in_h = int(props.keep_h * (2 - ZOOM_RATIO))
-                props.in_x, props.in_y = props.keep_x, props.keep_y
-            else:
-                raise ValueError(f"Unexpected in animation type: {in_anim}")
-
-        if props.out_anim != "NONE":
-            props.out_duration = ANIMATE_DURATION
-
-        out_anim = props.out_anim
-        if out_anim == "NONE":
-            pass
-        else:
-            props.out_alpha = 0
-            props.out_rotation = props.keep_rotation
-            if out_anim == "FADE":
-                props.out_w, props.out_h = props.keep_w, props.keep_h
-                props.out_x, props.out_y = props.keep_x, props.keep_y
-            elif out_anim == "UP":
-                props.out_w, props.out_h = props.keep_w, props.keep_h
-                props.out_x, props.out_y = props.keep_x, props.keep_y + SLIDE_OFFSET
-            elif out_anim == "DOWN":
-                props.out_w, props.out_h = props.keep_w, props.keep_h
-                props.out_x, props.out_y = props.keep_x, props.keep_y - SLIDE_OFFSET
-            elif out_anim == "LEFT":
-                props.out_w, props.out_h = props.keep_w, props.keep_h
-                props.out_x, props.out_y = props.keep_x - SLIDE_OFFSET, props.keep_y
-            elif out_anim == "RIGHT":
-                props.out_w, props.out_h = props.keep_w, props.keep_h
-                props.out_x, props.out_y = props.keep_x + SLIDE_OFFSET, props.keep_y
-            elif out_anim == "Z+":
-                props.out_w = int(props.keep_w * (2 - ZOOM_RATIO))
-                props.out_h = int(props.keep_h * (2 - ZOOM_RATIO))
-                props.out_x, props.out_y = props.keep_x, props.keep_y
-            elif out_anim == "Z-":
-                props.out_w = int(props.keep_w * ZOOM_RATIO)
-                props.out_h = int(props.keep_h * ZOOM_RATIO)
-                props.out_x, props.out_y = props.keep_x, props.keep_y
-            else:
-                raise ValueError(f"Unexpected out animation type: {out_anim}")
-
         fps = get_fps()
-        in_frames = int(props.in_duration * fps)
-        keep_frames = int(props.keep_duration * fps)
-        out_frames = int(props.out_duration * fps)
+        in_frames = int(props.k12_t * fps)
+        keep_frames = int(props.k23_t * fps)
+        out_frames = int(props.k34_t * fps)
+        print(in_frames, keep_frames, out_frames)
 
-        if props.source == "STRIP":
-            selected_strips = bpy.context.selected_sequences
-            if not selected_strips:
-                self.report({"WARNING"}, "No strip selected")
-                return {"FINISHED"}
-            elif len(selected_strips) > 1:
-                self.report({"WARNING"}, "Only one image strip is allowed")
-                return {"FINISHED"}
-            else:
-                strip = selected_strips[0]
-                start_frame = int(strip.frame_start)
-                channel = strip.channel
-                seq_editor = bpy.context.scene.sequence_editor
-                seq_editor.sequences.remove(strip)
-        elif props.source == "FS":
-            start_frame = context.scene.frame_current
-            channel = int(props.channel)
+        selected_strips = bpy.context.selected_sequences
+        if not selected_strips:
+            self.report({"WARNING"}, "No strip selected")
+            return {"FINISHED"}
+        elif len(selected_strips) > 1:
+            self.report({"WARNING"}, "Only one image strip is allowed")
+            return {"FINISHED"}
         else:
-            raise ValueError(f"Invalid source: {props.source}")
+            strip = selected_strips[0]
+            start_frame = int(strip.frame_start)
+            channel = strip.channel
+            seq_editor = bpy.context.scene.sequence_editor
+            seq_editor.sequences.remove(strip)
 
         img_strip = seq.sequences.new_image(
             name=filepath.split("/")[-1],
@@ -534,23 +567,52 @@ class VSE_OT_add_image_with_anim(bpy.types.Operator):
         )
         img_strip.frame_final_duration = in_frames + keep_frames + out_frames
 
-        self.insert_keyframe(
+        insert_keyframe(
             img_strip,
-            frame=(start_frame, start_frame + in_frames),
-            alpha=(props.in_alpha, props.keep_alpha),
-            scale=(props.in_w / props.img_w, props.keep_w / props.img_w),
-            pos=((props.in_x, props.in_y), (props.keep_x, props.keep_y)),
-            rotation=(props.in_rotation, props.keep_rotation),
+            frame=start_frame,
+            alpha=props.k1_a,
+            offset_x=props.k1_x,
+            offset_y=props.k1_y,
+            scale_x=props.k1_w / props.img_w,
+            scale_y=props.k1_h / props.img_h,
+            rotation=props.k1_rotation if props.k1_enable_rotation else None,
         )
 
-        start_frame += in_frames + keep_frames
-        self.insert_keyframe(
+        start_frame += in_frames
+        print(props.k2_enable_pos)
+        insert_keyframe(
             img_strip,
-            frame=(start_frame, start_frame + out_frames),
-            alpha=(props.keep_alpha, props.out_alpha),
-            scale=(props.keep_w / props.img_w, props.out_w / props.img_w),
-            pos=((props.keep_x, props.keep_y), (props.out_x, props.out_y)),
-            rotation=(props.keep_rotation, props.out_rotation),
+            frame=start_frame,
+            alpha=props.k2_a if props.k2_enable_alpha else None,
+            offset_x=props.k2_x if props.k2_enable_pos else None,
+            offset_y=props.k2_y if props.k2_enable_pos else None,
+            scale_x=props.k2_w / props.img_w if props.k2_enable_size else None,
+            scale_y=props.k2_h / props.img_h if props.k2_enable_size else None,
+            rotation=props.k2_rotation if props.k2_enable_rotation else None,
+        )
+
+        start_frame += keep_frames
+        insert_keyframe(
+            img_strip,
+            frame=start_frame,
+            alpha=props.k3_a if props.k3_enable_alpha else None,
+            offset_x=props.k3_x if props.k3_enable_pos else None,
+            offset_y=props.k3_y if props.k3_enable_pos else None,
+            scale_x=props.k3_w / props.img_w if props.k3_enable_size else None,
+            scale_y=props.k3_h / props.img_h if props.k3_enable_size else None,
+            rotation=props.k3_rotation if props.k3_enable_rotation else None,
+        )
+
+        start_frame += out_frames
+        insert_keyframe(
+            img_strip,
+            frame=start_frame,
+            alpha=props.k4_a,
+            offset_x=props.k4_x,
+            offset_y=props.k4_y,
+            scale_x=props.k4_w / props.img_w,
+            scale_y=props.k4_h / props.img_h,
+            rotation=props.k4_rotation if props.k4_enable_rotation else None,
         )
 
         self.report({"INFO"}, f"Inserted {filepath.split('/')[-1]}")
@@ -560,7 +622,7 @@ class VSE_OT_add_image_with_anim(bpy.types.Operator):
 # --------------------------
 # UI Panel
 # --------------------------
-class VSE_PT_image_anim_panel(bpy.types.Panel):
+class JF_PT_image_panel(bpy.types.Panel):
     bl_space_type = "SEQUENCE_EDITOR"
     bl_region_type = "UI"
     bl_category = "Jellyfish"
@@ -568,155 +630,230 @@ class VSE_PT_image_anim_panel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        props = context.scene.vse_image_anim_props
-
-        layout.prop(props, "source")
-        source_box = layout.box()
-        if props.source == "FS":
-            source_box.prop(props, "channel")
-            source_box.prop(props, "filepath")
-        else:
-            source_box.operator("jf.image_read_img_strip", text="", icon="EYEDROPPER")
+        props = context.scene.jf_image_props
 
         ow, oh = props.img_w, props.img_h
 
-        # -------- In --------
-        in_box = layout.box()
-        in_box.label(text="In", icon="TRIA_RIGHT")
-        in_box.prop(props, "in_anim")
-        if props.source == "FS":
-            in_box.prop(props, "in_duration")
-        if props.in_anim == "NONE":
-            size_col = in_box.column(align=True)
-            row = size_col.row(align=True)
-            row.prop(props, "in_w", text="W")
-            row.prop(props, "in_h", text="H")
-            size_row1 = size_col.row(align=True)
-            size_row1.operator(
-                "jf.image_reset_in_size_by_gap", text="Gap", icon="FULLSCREEN_EXIT"
-            )
-            size_row1.operator("jf.image_reset_in_size", text="Reset", icon="LOOP_BACK")
-            size_row2 = size_col.row(align=True)
-            size_row2.operator(
-                "jf.image_in_size_cover", text="Cover", icon="CLIPUV_DEHLT"
-            )
-            size_row2.operator(
-                "jf.image_in_size_contain", text="Contain", icon="CLIPUV_HLT"
-            )
-            w, h = props.in_w, props.in_h
-            if w > ow or h > oh:
-                in_box.label(text="Out of origin size", icon="ERROR")
-            pos_row = in_box.row(align=True)
-            pos_row.prop(props, "in_x", text="X")
-            pos_row.prop(props, "in_y", text="Y")
-            row = in_box.row(align=True)
-            row.prop(props, "in_alpha")
-            row.prop(props, "in_rotation")
+        col = layout.column(align=True)
+        row = col.row(align=True)
+        row.prop(props, "size_type", text="")
+        row.prop(props, "anim_type", text="")
+        row = col.row(align=True)
+        row.operator("jf.image_quick_set", text="Generate", icon="MODIFIER")
+        row.operator("jf.image_add_image_anim", text="Insert", icon="OUTLINER_OB_IMAGE")
 
-        # -------- KEEP --------
-        keep_box = layout.box()
-        keep_box.label(text="Keep", icon="PAUSE")
-        keep_box.prop(props, "keep_duration")
-        size_col = keep_box.column(align=True)
+        k1_box = layout.box()
+        k1_box.label(text="k1")
+        size_col = k1_box.column(align=True)
         row = size_col.row(align=True)
-        row.prop(props, "keep_w", text="W")
-        row.prop(props, "keep_h", text="H")
+        row.prop(props, "k1_w", text="W")
+        row.prop(props, "k1_h", text="H")
         size_row1 = size_col.row(align=True)
-        size_row1.operator(
-            "jf.image_reset_keep_size_by_gap", text="Gap", icon="FULLSCREEN_EXIT"
-        )
-        size_row1.operator("jf.image_reset_keep_size", text="Reset", icon="LOOP_BACK")
+        size_row1.operator("jf.image_k1_size_origin", text="Origin", icon="LOOP_BACK")
+        size_row1.operator("jf.image_k1_size_gap", text="Gap", icon="FULLSCREEN_EXIT")
         size_row2 = size_col.row(align=True)
+        size_row2.operator("jf.image_k1_size_cover", text="Cover", icon="CLIPUV_DEHLT")
         size_row2.operator(
-            "jf.image_keep_size_cover", text="Cover", icon="CLIPUV_DEHLT"
+            "jf.image_k1_size_contain", text="Contain", icon="CLIPUV_HLT"
         )
-        size_row2.operator(
-            "jf.image_keep_size_contain", text="Contain", icon="CLIPUV_HLT"
-        )
-        w, h = props.keep_w, props.keep_h
+        w, h = props.k1_w, props.k1_h
         if w > ow or h > oh:
-            keep_box.label(text="Out of origin size", icon="ERROR")
-        pos_row = keep_box.row(align=True)
-        pos_row.prop(props, "keep_x", text="X")
-        pos_row.prop(props, "keep_y", text="Y")
-        row = keep_box.row(align=True)
-        row.prop(props, "keep_alpha")
-        row.prop(props, "keep_rotation")
+            k1_box.label(text="Out of origin size", icon="ERROR")
+        pos_row = k1_box.row(align=True)
+        pos_row.prop(props, "k1_x", text="X")
+        pos_row.prop(props, "k1_y", text="Y")
+        k1_box.prop(props, "k1_a")
+        row = k1_box.row(align=True)
+        row.prop(
+            props,
+            "k1_enable_rotation",
+            text="" if props.k1_enable_rotation else "Enable Rotation",
+        )
+        if props.k1_enable_rotation:
+            row.prop(props, "k1_r")
 
-        # -------- EXIT --------
-        out_box = layout.box()
-        out_box.label(text="Out", icon="TRIA_LEFT")
-        out_box.prop(props, "out_anim")
-        if props.source == "FS":
-            out_box.prop(props, "out_duration")
-        if props.out_anim == "NONE":
-            size_col = out_box.column(align=True)
+        layout.prop(props, "k12_t")
+
+        k2_box = layout.box()
+        k2_box.label(text="k2")
+        size_row = k2_box.row(align=True)
+        size_row.prop(
+            props, "k2_enable_size", text="" if props.k2_enable_size else "Enable Size"
+        )
+        if props.k2_enable_size:
+            size_col = size_row.column(align=True)
             row = size_col.row(align=True)
-            row.prop(props, "out_w", text="W")
-            row.prop(props, "out_h", text="H")
+            row.prop(props, "k2_w", text="W")
+            row.prop(props, "k2_h", text="H")
             size_row1 = size_col.row(align=True)
             size_row1.operator(
-                "jf.image_reset_out_size_by_gap", text="Gap", icon="FULLSCREEN_EXIT"
+                "jf.image_k2_size_origin", text="Origin", icon="LOOP_BACK"
             )
             size_row1.operator(
-                "jf.image_reset_out_size", text="Reset", icon="LOOP_BACK"
+                "jf.image_k2_size_gap", text="Gap", icon="FULLSCREEN_EXIT"
             )
             size_row2 = size_col.row(align=True)
             size_row2.operator(
-                "jf.image_out_size_cover", text="Cover", icon="CLIPUV_DEHLT"
+                "jf.image_k2_size_cover", text="Cover", icon="CLIPUV_DEHLT"
             )
             size_row2.operator(
-                "jf.image_out_size_contain", text="Contain", icon="CLIPUV_HLT"
+                "jf.image_k2_size_contain", text="Contain", icon="CLIPUV_HLT"
             )
-            w, h = props.out_w, props.out_h
+            w, h = props.k2_w, props.k2_h
             if w > ow or h > oh:
-                out_box.label(text="Out of origin size", icon="ERROR")
-            pos_row = out_box.row(align=True)
-            pos_row.prop(props, "out_x", text="X")
-            pos_row.prop(props, "out_y", text="Y")
-            row = out_box.row(align=True)
-            row.prop(props, "out_alpha")
-            row.prop(props, "out_rotation")
+                k2_box.label(text="Out of origin size", icon="ERROR")
+        pos_row = k2_box.row(align=True)
+        pos_row.prop(
+            props,
+            "k2_enable_pos",
+            text="" if props.k2_enable_pos else "Enable Position",
+        )
+        if props.k2_enable_pos:
+            pos_row.prop(props, "k2_x", text="X")
+            pos_row.prop(props, "k2_y", text="Y")
+        row = k2_box.row(align=True)
+        row.prop(
+            props,
+            "k2_enable_alpha",
+            text="" if props.k2_enable_alpha else "Enable Alpha",
+        )
+        if props.k2_enable_alpha:
+            row.prop(props, "k2_a")
+        row = k2_box.row(align=True)
+        row.prop(
+            props,
+            "k2_enable_rotation",
+            text="" if props.k2_enable_rotation else "Enable Rotation",
+        )
+        if props.k2_enable_rotation:
+            row.prop(props, "k2_r")
 
-        layout.separator()
-        layout.operator("jf.image_add_image_anim", text="Insert")
+        layout.prop(props, "k23_t")
+
+        k3_box = layout.box()
+        k3_box.label(text="k3")
+        size_row = k3_box.row(align=True)
+        size_row.prop(
+            props, "k3_enable_size", text="" if props.k3_enable_size else "Enable Size"
+        )
+        if props.k3_enable_size:
+            size_col = size_row.column(align=True)
+            row = size_col.row(align=True)
+            row.prop(props, "k3_w", text="W")
+            row.prop(props, "k3_h", text="H")
+            size_row1 = size_col.row(align=True)
+            size_row1.operator(
+                "jf.image_k3_size_origin", text="Origin", icon="LOOP_BACK"
+            )
+            size_row1.operator(
+                "jf.image_k3_size_gap", text="Gap", icon="FULLSCREEN_EXIT"
+            )
+            size_row2 = size_col.row(align=True)
+            size_row2.operator(
+                "jf.image_k3_size_cover", text="Cover", icon="CLIPUV_DEHLT"
+            )
+            size_row2.operator(
+                "jf.image_k3_size_contain", text="Contain", icon="CLIPUV_HLT"
+            )
+            w, h = props.k3_w, props.k3_h
+            if w > ow or h > oh:
+                k3_box.label(text="Out of origin size", icon="ERROR")
+        pos_row = k3_box.row(align=True)
+        pos_row.prop(
+            props,
+            "k3_enable_pos",
+            text="" if props.k3_enable_pos else "Enable Position",
+        )
+        if props.k3_enable_pos:
+            pos_row.prop(props, "k3_x", text="X")
+            pos_row.prop(props, "k3_y", text="Y")
+        row = k3_box.row(align=True)
+        row.prop(
+            props,
+            "k3_enable_alpha",
+            text="" if props.k3_enable_alpha else "Enable Alpha",
+        )
+        if props.k3_enable_alpha:
+            row.prop(props, "k3_a")
+        row = k3_box.row(align=True)
+        row.prop(
+            props,
+            "k3_enable_rotation",
+            text="" if props.k3_enable_rotation else "Enable Rotation",
+        )
+        if props.k3_enable_rotation:
+            row.prop(props, "k3_r")
+
+        layout.prop(props, "k34_t")
+
+        k4_box = layout.box()
+        k4_box.label(text="k4")
+        size_col = k4_box.column(align=True)
+        row = size_col.row(align=True)
+        row.prop(props, "k4_w", text="W")
+        row.prop(props, "k4_h", text="H")
+        size_row1 = size_col.row(align=True)
+        size_row1.operator("jf.image_k4_size_origin", text="Origin", icon="LOOP_BACK")
+        size_row1.operator("jf.image_k4_size_gap", text="Gap", icon="FULLSCREEN_EXIT")
+        size_row2 = size_col.row(align=True)
+        size_row2.operator("jf.image_k4_size_cover", text="Cover", icon="CLIPUV_DEHLT")
+        size_row2.operator(
+            "jf.image_k4_size_contain", text="Contain", icon="CLIPUV_HLT"
+        )
+        w, h = props.k4_w, props.k4_h
+        if w > ow or h > oh:
+            k4_box.label(text="Out of origin size", icon="ERROR")
+        pos_row = k4_box.row(align=True)
+        pos_row.prop(props, "k4_x", text="X")
+        pos_row.prop(props, "k4_y", text="Y")
+        k4_box.prop(props, "k4_a")
+        row = k4_box.row(align=True)
+        row.prop(
+            props,
+            "k4_enable_rotation",
+            text="" if props.k4_enable_rotation else "Enable Rotation",
+        )
+        if props.k4_enable_rotation:
+            row.prop(props, "k4_r")
 
 
 # --------------------------
 # Register
 # --------------------------
 classes = [
-    VSEImageAnimProperties,
-    VSE_OT_read_img_strip,
-    VSE_OT_add_image_with_anim,
-    VSE_OT_reset_in_size,
-    VSE_OT_in_size_cover,
-    VSE_OT_in_size_contain,
-    VSE_OT_reset_in_size_by_gap,
-    VSE_OT_reset_keep_size,
-    VSE_OT_keep_size_cover,
-    VSE_OT_keep_size_contain,
-    VSE_OT_reset_keep_size_by_gap,
-    VSE_OT_reset_out_size,
-    VSE_OT_out_size_cover,
-    VSE_OT_out_size_contain,
-    VSE_OT_reset_out_size_by_gap,
-    VSE_PT_image_anim_panel,
+    JFImageProps,
+    JF_OT_quick_set,
+    JF_OT_add_animation,
+    JF_OT_k1_size_origin,
+    JF_OT_k1_size_cover,
+    JF_OT_k1_size_contain,
+    JF_OT_k1_size_gap,
+    JF_OT_k2_size_origin,
+    JF_OT_k2_size_cover,
+    JF_OT_k2_size_contain,
+    JF_OT_k2_size_gap,
+    JF_OT_k3_size_origin,
+    JF_OT_k3_size_cover,
+    JF_OT_k3_size_contain,
+    JF_OT_k3_size_gap,
+    JF_OT_k4_size_origin,
+    JF_OT_k4_size_cover,
+    JF_OT_k4_size_contain,
+    JF_OT_k4_size_gap,
+    JF_PT_image_panel,
 ]
 
 
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
-    bpy.types.Scene.vse_image_anim_props = bpy.props.PointerProperty(
-        type=VSEImageAnimProperties
-    )
+    bpy.types.Scene.jf_image_props = bpy.props.PointerProperty(type=JFImageProps)
 
 
 def unregister():
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
-    del bpy.types.Scene.vse_image_anim_props
+    del bpy.types.Scene.jf_image_props
 
 
 if __name__ == "__main__":

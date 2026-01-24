@@ -3,58 +3,36 @@ import math, bpy
 
 def insert_keyframe(
     strip,
-    frame: tuple[int, int],
-    alpha: tuple[float, float] | None = None,
-    pos: tuple[(int, int), (int, int)] | None = None,
-    rotation: tuple[float, float] | None = None,
-    scale: tuple[float, float] | None = None,
+    frame: int,
+    alpha: float | None = None,
+    offset_x: int | None = None,
+    offset_y: int | None = None,
+    scale_x: float | None = None,
+    scale_y: float | None = None,
+    scale: float | None = None,
+    rotation: float | None = None,
 ):
-    params = (
-        [
-            (frame[0], "blend_alpha", alpha[0]),
-            (frame[1], "blend_alpha", alpha[1]),
-        ]
-        if alpha
-        else []
-    )
-    for f, k, v in params:
-        setattr(strip, k, v)
-        strip.keyframe_insert(data_path=k, frame=f)
+    if alpha is not None:
+        setattr(strip, "blend_alpha", alpha)
+        strip.keyframe_insert(data_path="blend_alpha", frame=frame)
+    params = []
+    if offset_x is not None:
+        params.append(("offset_x", offset_x))
+    if offset_y is not None:
+        params.append(("offset_y", offset_y))
+    if scale_x is not None:
+        params.append(("scale_x", scale_x))
+    if scale_y is not None:
+        params.append(("scale_y", scale_y))
+    if scale is not None:
+        params.append(("scale_x", scale))
+        params.append(("scale_y", scale))
+    if rotation is not None:
+        params.append(("rotation", rotation))
 
-    params = (
-        (
-            []
-            if scale is None
-            else [
-                (frame[0], "scale_x", scale[0]),
-                (frame[0], "scale_y", scale[0]),
-                (frame[1], "scale_x", scale[1]),
-                (frame[1], "scale_y", scale[1]),
-            ]
-        )
-        + (
-            []
-            if pos is None
-            else [
-                (frame[0], "offset_x", pos[0][0]),
-                (frame[0], "offset_y", pos[0][1]),
-                (frame[1], "offset_x", pos[1][0]),
-                (frame[1], "offset_y", pos[1][1]),
-            ]
-        )
-        + (
-            []
-            if rotation is None
-            else [
-                (frame[0], "rotation", math.radians(rotation[0])),
-                (frame[1], "rotation", math.radians(rotation[1])),
-            ]
-        )
-    )
-
-    for f, k, v in params:
+    for k, v in params:
         setattr(strip.transform, k, v)
-        strip.transform.keyframe_insert(data_path=k, frame=f)
+        strip.transform.keyframe_insert(data_path=k, frame=frame)
 
 
 def get_screen_size(context):
