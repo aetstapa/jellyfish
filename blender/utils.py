@@ -28,7 +28,7 @@ def insert_keyframe(
         params.append(("scale_x", scale))
         params.append(("scale_y", scale))
     if rotation is not None:
-        params.append(("rotation", rotation))
+        params.append(("rotation", math.radians(rotation)))
 
     for k, v in params:
         setattr(strip.transform, k, v)
@@ -43,3 +43,10 @@ def get_screen_size(context):
 def get_fps() -> float:
     render = bpy.context.scene.render
     return render.fps / render.fps_base
+
+
+def read_img_size(filepath: str) -> tuple[int, int]:
+    img = bpy.data.images.get(filepath)
+    if img is None:
+        img = bpy.data.images.load(filepath)
+    return (img.size[0], img.size[1])

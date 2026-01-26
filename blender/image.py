@@ -21,9 +21,7 @@ from bpy.props import (
 )
 from utils import *
 
-IN_TIME = 0.5
-SLIDE_OFFSET = 200
-ZOOM_RATIO = 0.4
+IN_TIME = 0.8
 
 
 # --------------------------
@@ -67,6 +65,7 @@ class JFImageProps(bpy.types.PropertyGroup):
             ("ZOOM+", "ZOOM+ in, ZOOM+ out", ""),
             ("ZOOM-", "ZOOM- in, ZOOM- out", ""),
         ],
+        default="MOV_RIGHT",
     )
 
     size_type: EnumProperty(
@@ -296,50 +295,55 @@ class JF_OT_quick_set(bpy.types.Operator):
             props.k3_enable_pos = True
             props.k3_enable_size = True
 
+        sw, sh = get_screen_size(context)
+        slide_x = int(sw * 0.05)
+        slide_y = int(sh * 0.05)
+        zoom_ratio = 0.4
+
         if type == "MOV_LEFT":
-            props.k4_x = -SLIDE_OFFSET
+            props.k4_x = -slide_x
             props.k4_y = 0
         elif type == "MOV_RIGHT":
-            props.k4_x = SLIDE_OFFSET
+            props.k4_x = slide_x
             props.k4_y = 0
         elif type == "MOV_UP":
             props.k4_x = 0
-            props.k4_y = SLIDE_OFFSET
+            props.k4_y = slide_y
         elif type == "MOV_DOWN":
             props.k4_x = 0
-            props.k4_y = -SLIDE_OFFSET
+            props.k4_y = -slide_y
         elif type == "FADE":
             pass
         elif type == "UD":
             props.k1_x = 0
-            props.k1_y = SLIDE_OFFSET
+            props.k1_y = slide_y
             props.k4_x = 0
-            props.k4_y = -SLIDE_OFFSET
+            props.k4_y = -slide_y
         elif type == "DU":
             props.k1_x = 0
-            props.k1_y = -SLIDE_OFFSET
+            props.k1_y = -slide_y
             props.k4_x = 0
-            props.k4_y = SLIDE_OFFSET
+            props.k4_y = slide_y
         elif type == "LR":
-            props.k1_x = -SLIDE_OFFSET
+            props.k1_x = -slide_x
             props.k1_y = 0
-            props.k4_x = SLIDE_OFFSET
+            props.k4_x = slide_x
             props.k4_y = 0
         elif type == "RL":
-            props.k1_x = SLIDE_OFFSET
+            props.k1_x = slide_x
             props.k1_y = 0
-            props.k4_x = -SLIDE_OFFSET
+            props.k4_x = -slide_x
             props.k4_y = 0
         elif type == "ZOOM+":
-            props.k1_w = int(w * ZOOM_RATIO)
-            props.k1_h = int(h * ZOOM_RATIO)
-            props.k4_w = int(w * (1 + ZOOM_RATIO))
-            props.k4_h = int(h * (1 + ZOOM_RATIO))
+            props.k1_w = int(w * zoom_ratio)
+            props.k1_h = int(h * zoom_ratio)
+            props.k4_w = int(w * (1 + zoom_ratio))
+            props.k4_h = int(h * (1 + zoom_ratio))
         elif type == "ZOOM-":
-            props.k1_w = int(w * (1 + ZOOM_RATIO))
-            props.k1_h = int(h * (1 + ZOOM_RATIO))
-            props.k4_w = int(w * ZOOM_RATIO)
-            props.k4_h = int(h * ZOOM_RATIO)
+            props.k1_w = int(w * (1 + zoom_ratio))
+            props.k1_h = int(h * (1 + zoom_ratio))
+            props.k4_w = int(w * zoom_ratio)
+            props.k4_h = int(h * zoom_ratio)
         else:
             self.report({"ERROR"}, "Unknown animation type")
         return {"FINISHED"}
@@ -543,7 +547,6 @@ class JF_OT_add_animation(bpy.types.Operator):
         in_frames = int(props.k12_t * fps)
         keep_frames = int(props.k23_t * fps)
         out_frames = int(props.k34_t * fps)
-        print(in_frames, keep_frames, out_frames)
 
         selected_strips = bpy.context.selected_sequences
         if not selected_strips:
@@ -554,7 +557,7 @@ class JF_OT_add_animation(bpy.types.Operator):
             return {"FINISHED"}
         else:
             strip = selected_strips[0]
-            start_frame = int(strip.frame_start)
+            start_frame =strip.frame_final_start
             channel = strip.channel
             seq_editor = bpy.context.scene.sequence_editor
             seq_editor.sequences.remove(strip)
@@ -579,7 +582,6 @@ class JF_OT_add_animation(bpy.types.Operator):
         )
 
         start_frame += in_frames
-        print(props.k2_enable_pos)
         insert_keyframe(
             img_strip,
             frame=start_frame,

@@ -220,7 +220,6 @@ class VSE_OT_InsertText(bpy.types.Operator):
                     self.report({"WARNING"}, "Invalid image strip")
                     return {"FINISHED"}
         frame_end = frame_start + int(props.duration * fps)
-        print(frame_start, frame_end)
 
         text_strip = seq.sequences.new_effect(
             name=props.text,
@@ -332,6 +331,7 @@ class VSE_PT_TextPanel(bpy.types.Panel):
         row.prop(props, "font_path", text="")
         row.operator("jf.text_select_font_path", icon="FILE_FONT", text="")
         col = layout.column(align=True)
+
         row = col.row(align=True)
         row.prop(props, "size")
         row.prop(props, "color", text="")
@@ -339,14 +339,17 @@ class VSE_PT_TextPanel(bpy.types.Panel):
         row.operator("jf.text_small_font_size", text="S")
         row.operator("jf.text_medium_font_size", text="M")
         row.operator("jf.text_large_font_size", text="L")
+
         col = layout.column(align=True)
         col.prop(props, "placement", text="")
         row = col.row(align=True)
-        row.prop(props, "rel_pos", text="")
         row.prop(props, "x")
         row.prop(props, "y")
+        col.prop(props, "rel_pos", text="")
+
         layout.prop(props, "duration")
         layout.prop(props, "channel")
+
         text = "Insert" if props.source == "NEW" else "Modify"
         layout.operator("jf.text_insert_text", text=text)
 
