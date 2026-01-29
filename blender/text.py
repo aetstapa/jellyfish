@@ -194,7 +194,7 @@ class VSE_OT_InsertText(bpy.types.Operator):
 
         if props.font_path == "":
             self.report({"WARNING"}, "Invalid font path")
-            return {"FINISHED"}
+            return {"CANCELLED"}
 
         if seq is None:
             scene.sequence_editor_create()
@@ -206,10 +206,10 @@ class VSE_OT_InsertText(bpy.types.Operator):
             selected_strips = bpy.context.selected_sequences
             if not selected_strips:
                 self.report({"WARNING"}, "No strip selected")
-                return {"FINISHED"}
+                return {"CANCELLED"}
             elif len(selected_strips) > 1:
                 self.report({"WARNING"}, "Only one text strip is allowed")
-                return {"FINISHED"}
+                return {"CANCELLED"}
             else:
                 strip = selected_strips[0]
                 if strip.type == "TEXT":
@@ -218,7 +218,7 @@ class VSE_OT_InsertText(bpy.types.Operator):
                     seq_editor.sequences.remove(strip)
                 else:
                     self.report({"WARNING"}, "Invalid image strip")
-                    return {"FINISHED"}
+                    return {"CANCELLED"}
         frame_end = frame_start + int(props.duration * fps)
 
         text_strip = seq.sequences.new_effect(

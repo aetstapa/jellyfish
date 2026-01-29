@@ -2,9 +2,13 @@ from manimlib import *
 import random
 import pdb
 from PIL import Image
-import os, re
 
+# poem = ["处世若大梦", "胡为劳其生", "所以终日醉", "颓然卧前楹"]
+# total_read_time = 10.4
+# total_hold_time = 7.7
 poem = ["人生得意须尽欢", "莫使金樽空对月", "天生我材必有用", "千金散尽还复来"]
+total_read_time = 13.6
+total_hold_time = 15
 
 
 class Poem(Scene):
@@ -13,9 +17,9 @@ class Poem(Scene):
         self.camera.background_rgba = [250 / 255, 250 / 255, 250 / 255, 1]
         self.camera.fps = 30
 
-        read_time = 13.5
-        hold_time = 7.7
         fade_time = 0.8
+        read_time = total_read_time - fade_time
+        hold_time = total_hold_time - fade_time
         direction = "V"
         # font = "Songti SC"
         # font = "LXGW WenKai"
@@ -32,7 +36,7 @@ class Poem(Scene):
         bg_ow, bg_oh = bg_img.size
         r = FRAME_HEIGHT / bg_oh
         bg_w = r * bg_ow
-        bg_offset = min(0.25 * bg_w, 0.5 * FRAME_WIDTH)
+        bg_offset = min(0.25 * bg_w, 0.25 * FRAME_WIDTH)
         bg_ox_range = (
             (bg_offset + FRAME_WIDTH / 2, bg_w - FRAME_WIDTH / 2)
             if bg_move_right
@@ -125,26 +129,9 @@ class Poem(Scene):
             # ),
             run_time=fade_time,
         )
-        self.wait(1)
 
 
 if __name__ == "__main__":
-    dir = "/Users/jiaju/Documents/视频/001.李白/李白/"
-    pattern = re.compile(rf"{re.escape(poem[0])}_v(\d+)\.mp4$")
-    version = 1
-    for filename in os.listdir(dir):
-        match = pattern.match(filename)
-        if match:
-            ver = int(match.group(1))
-            if ver >= version:
-                version = ver + 1
-            os.remove(os.path.join(dir, filename))
+    from base import *
 
-    Poem(
-        camera_config={"resolution": (1920, 1080)},
-        file_writer_config={
-            "write_to_movie": True,
-            "output_directory": dir,
-            "file_name": f"{poem[0]}_v{version}.mp4",
-        },
-    ).run()
+    cook(Poem, basename=poem[0])

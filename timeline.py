@@ -6,6 +6,9 @@ PIECE_WIDTH = FRAME_WIDTH / 2
 PIECE_HEIGHT = FRAME_HEIGHT / 2
 ANIM_TIME = 2
 
+start_time = (700, 1)
+end_time = (701, 1)
+
 
 class Timeline(Scene):
 
@@ -25,8 +28,6 @@ class Timeline(Scene):
         #  FAFAFA
         self.camera.background_rgba = [250 / 255, 250 / 255, 250 / 255, 1]
 
-        start_time = (700, 1)
-        end_time = (701, 1)
         reversed = start_time[0] > end_time[0] or (
             start_time[0] == end_time[0] and start_time[1] > end_time[1]
         )
@@ -148,3 +149,12 @@ class Timeline(Scene):
             FadeOut(time_group, shift=DOWN),
             run_time=1,
         )
+
+
+if __name__ == "__main__":
+    from base import *
+
+    cook(
+        Timeline,
+        basename=f"{start_time[0]}_{start_time[1]}_{end_time[0]}_{end_time[1]}",
+    )

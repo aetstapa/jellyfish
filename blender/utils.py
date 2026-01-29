@@ -42,7 +42,7 @@ def get_screen_size(context):
 
 def get_fps() -> float:
     render = bpy.context.scene.render
-    return render.fps / render.fps_base
+    return round(render.fps / render.fps_base)
 
 
 def read_img_size(filepath: str) -> tuple[int, int]:
@@ -50,3 +50,32 @@ def read_img_size(filepath: str) -> tuple[int, int]:
     if img is None:
         img = bpy.data.images.load(filepath)
     return (img.size[0], img.size[1])
+
+
+def check_free_space(seq, strip, free_pre: int, free_post: int):
+    same_channel = [
+        s for s in seq.sequences_all if s.channel == strip.channel and s != strip
+    ]
+
+    prev_end = None
+    for s in same_channel:
+        if s.frame_final_end <= strip.frame_final_start:
+            if prev_end is None or s.frame_final_end > prev_end:
+                prev_end = s.frame_final_end
+
+    next_start = None
+    for s in same_channel:
+        if s.frame_final_start >= strip.frame_final_end:
+            if next_start is None or s.frame_final_start < next_start:
+                next_start = s.frame_final_start
+
+    pre_gap = (
+        strip.frame_final_start - prev_end if prev_end is not None else float("inf")
+    )
+    post_gap = (
+        next_start - strip.frame_final_end if next_start is not None else float("inf")
+    )
+
+    ok = pre_gap >= free_pre and post_gap >= free_post
+
+    return ok, pre_gap, post_gap

@@ -243,11 +243,11 @@ class JF_OT_quick_set(bpy.types.Operator):
                     )
             else:
                 self.report({"WARNING"}, "Invalid image strip")
-                return {"FINISHED"}
+                return {"CANCELLED"}
 
         props = context.scene.jf_image_props
         if not props.check_filepath():
-            return {"FINISHED"}
+            return {"CANCELLED"}
 
         type = props.anim_type
         size_type = props.size_type
@@ -260,7 +260,7 @@ class JF_OT_quick_set(bpy.types.Operator):
             w, h = props.calc_gap_size(context)
         else:
             self.report({"ERROR"}, "Unknown size type")
-            return {"FINISHED"}
+            return {"CANCELLED"}
         props.k1_w, props.k1_h = w, h
         props.k1_x, props.k1_y = 0, 0
         props.k1_a = 0
@@ -551,13 +551,13 @@ class JF_OT_add_animation(bpy.types.Operator):
         selected_strips = bpy.context.selected_sequences
         if not selected_strips:
             self.report({"WARNING"}, "No strip selected")
-            return {"FINISHED"}
+            return {"CANCELLED"}
         elif len(selected_strips) > 1:
             self.report({"WARNING"}, "Only one image strip is allowed")
-            return {"FINISHED"}
+            return {"CANCELLED"}
         else:
             strip = selected_strips[0]
-            start_frame =strip.frame_final_start
+            start_frame = strip.frame_final_start
             channel = strip.channel
             seq_editor = bpy.context.scene.sequence_editor
             seq_editor.sequences.remove(strip)

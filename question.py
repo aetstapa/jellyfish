@@ -1,14 +1,15 @@
 from manimlib import *
 
+question_text = "下面哪个选项是正确的？"
+options = ["A. 选项一", "B. 选项二", "C. 选项三", "D. 选项四"]
 
-class QuestionWithOptions(Scene):
+
+class Question(Scene):
     def construct(self):
         # FAFAFA
         self.camera.background_rgba = [250 / 255, 250 / 255, 250 / 255, 1]
         self.camera.fps = 30
 
-        question_text = "下面哪个选项是正确的？"
-        options = ["A. 选项一", "B. 选项二", "C. 选项三", "D. 选项四"]
         in_time = 4
         keep_time = 5
         question_time_ratio = 0.3
@@ -59,5 +60,11 @@ class QuestionWithOptions(Scene):
                 FadeOut(o, shift=LEFT if i % 2 == 0 else RIGHT)
                 for i, o in enumerate(option_mobjects)
             ],
-            run_time=out_time
+            run_time=out_time,
         )
+
+
+if __name__ == "__main__":
+    from base import *
+
+    cook(Question, basename=question_text)

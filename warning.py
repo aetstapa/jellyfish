@@ -58,3 +58,12 @@ class Warning(Scene):
             FadeOut(signature, shift=RIGHT),
             FadeOut(bg, scale=0.2),
         )
+
+
+if __name__ == "__main__":
+    from base import *
+
+    cook(
+        Warning,
+        basename="warning",
+    )

@@ -37,7 +37,7 @@ class JF_OT_add_anim(bpy.types.Operator):
         props = context.scene.jf_map_props
         if not props.pin_path:
             self.report({"WARNING"}, "Select pin image first")
-            return {"FINISHED"}
+            return {"CANCELLED"}
 
         scene = bpy.context.scene
         seq = scene.sequence_editor
@@ -61,7 +61,7 @@ class JF_OT_add_anim(bpy.types.Operator):
                 img_strip = strip.sequences[0]
             else:
                 self.report({"WARNING"}, "Invalid image strip")
-                return {"FINISHED"}
+                return {"CANCELLED"}
 
             channel = strip.channel
             filepath = os.path.join(img_strip.directory, img_strip.elements[0].filename)
@@ -71,7 +71,7 @@ class JF_OT_add_anim(bpy.types.Operator):
                     {"WARNING"},
                     f"strip duration too short, less than {fade_time * 2}s",
                 )
-                return {"FINISHED"}
+                return {"CANCELLED"}
             frame_final_start = strip.frame_final_start
             seq.sequences.remove(strip)
             strip = seq.sequences.new_image(
