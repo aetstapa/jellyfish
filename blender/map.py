@@ -21,7 +21,7 @@ from utils import *
 
 class JFMapProps(bpy.types.PropertyGroup):
     pin_path: StringProperty(
-        name="Image",
+        name="Pin Image",
         description="Select an pin image",
         subtype="FILE_PATH",
     )
@@ -45,7 +45,7 @@ class JF_OT_add_anim(bpy.types.Operator):
             seq = scene.sequence_editor_create()
 
         fps = get_fps()
-        fade_time = 0.5
+        fade_time = 1.0
         fade_frames = fps * fade_time
 
         selected_strips = bpy.context.selected_sequences
@@ -137,8 +137,14 @@ class JF_OT_add_anim(bpy.types.Operator):
             channel=channel + 1,
         )
         pin_strip.frame_final_end = strip.frame_final_end
+        rotate_speed = 90
+        angle = pin_strip.frame_final_duration / fps * rotate_speed
         insert_keyframe(
-            pin_strip, frame=pin_frame, alpha=0, scale=target_pin_scale * 10
+            pin_strip,
+            frame=pin_frame,
+            alpha=0,
+            scale=target_pin_scale * 10,
+            rotation=0,
         )
         insert_keyframe(pin_strip, frame=map_frame, alpha=1, scale=target_pin_scale)
         insert_keyframe(
@@ -147,7 +153,9 @@ class JF_OT_add_anim(bpy.types.Operator):
             alpha=1,
             scale=target_pin_scale,
         )
-        insert_keyframe(pin_strip, frame=pin_strip.frame_final_end, alpha=0, scale=0)
+        insert_keyframe(
+            pin_strip, frame=pin_strip.frame_final_end, alpha=0, scale=0, rotation=angle
+        )
 
         for s in seq.sequences_all:
             s.select = False
@@ -192,7 +200,7 @@ class JF_PT_map_panel(bpy.types.Panel):
 
         layout.prop(props, "pin_path")
 
-        pin_row = layout.row(align=True, heading="Pin")
+        pin_row = layout.row(align=True, heading="Position")
         pin_row.prop(props, "x")
         pin_row.prop(props, "y")
 
