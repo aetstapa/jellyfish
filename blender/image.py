@@ -72,10 +72,36 @@ class JFImageProps(bpy.types.PropertyGroup):
         name="Size",
         description="Size type setting",
         items=[
+            ("ORIGIN", "Origin", ""),
             ("COVER", "Cover", ""),
             ("CONTAIN", "Contain", ""),
-            ("GAP", "Gap", ""),
+            ("1/2w", "1/2 of width", ""),
+            ("1/4w", "1/4 of width", ""),
+            ("1/6w", "1/6 of width", ""),
+            ("1/8w", "1/8 of width", ""),
+            ("1/2w", "1/2 of height", ""),
+            ("1/4w", "1/4 of height", ""),
+            ("1/6w", "1/6 of height", ""),
+            ("1/8w", "1/8 of height", ""),
         ],
+        default="ORIGIN",
+    )
+
+    origin_type: EnumProperty(
+        name="Origin",
+        description="Origin position",
+        items=[
+            ("UL", "Up-Left", ""),
+            ("U", "Up", ""),
+            ("UR", "Up-Right", ""),
+            ("L", "Left", ""),
+            ("C", "Center", ""),
+            ("R", "Right", ""),
+            ("DL", "Down-Left", ""),
+            ("D", "Down", ""),
+            ("DR", "Down-Right", ""),
+        ],
+        default="C",
     )
 
     k1_w: IntProperty(name="Width", min=0, default=0)
@@ -251,33 +277,84 @@ class JF_OT_quick_set(bpy.types.Operator):
 
         type = props.anim_type
         size_type = props.size_type
+        sw, sh = get_screen_size(context)
 
-        if size_type == "COVER":
+        if size_type == "ORIGIN":
+            w, h = props.img_w, props.img_h
+        elif size_type == "COVER":
             w, h = props.calc_cover_size(context)
         elif size_type == "CONTAIN":
             w, h = props.calc_contain_size(context)
-        elif size_type == "GAP":
-            w, h = props.calc_gap_size(context)
+        elif size_type == "1/2w":
+            w = sw * 1 / 2
+            h = w / props.img_w * props.img_h
+        elif size_type == "1/4w":
+            w = sw * 1 / 4
+            h = w / props.img_w * props.img_h
+        elif size_type == "1/6w":
+            w = sw * 1 / 6
+            h = w / props.img_w * props.img_h
+        elif size_type == "1/8w":
+            w = sw * 1 / 8
+            h = w / props.img_w * props.img_h
+        elif size_type == "1/2h":
+            h = sh * 1 / 2
+            w = h / props.img_h * props.img_w
+        elif size_type == "1/4h":
+            h = sh * 1 / 4
+            w = h / props.img_h * props.img_w
+        elif size_type == "1/6h":
+            h = sh * 1 / 6
+            w = h / props.img_h * props.img_w
+        elif size_type == "1/8h":
+            h = sh * 1 / 8
+            w = h / props.img_h * props.img_w
         else:
             self.report({"ERROR"}, "Unknown size type")
             return {"CANCELLED"}
+        w, h = int(w), int(h)
+
+        origin_type = props.origin_type
+        if origin_type == "UL":
+            ox, oy = -sw / 4, sh / 4
+        elif origin_type == "U":
+            ox, oy = 0, sh / 4
+        elif origin_type == "UR":
+            ox, oy = sw / 4, sh / 4
+        elif origin_type == "L":
+            ox, oy = -sw / 4, 0
+        elif origin_type == "C":
+            ox, oy = 0, 0
+        elif origin_type == "R":
+            ox, oy = sw / 4, 0
+        elif origin_type == "DL":
+            ox, oy = -sw / 4, -sh / 4
+        elif origin_type == "D":
+            ox, oy = 0, -sh / 4
+        elif origin_type == "DR":
+            ox, oy = sw / 4, -sh / 4
+        else:
+            self.report({"ERROR"}, "Unknown origin type")
+            return {"CANCELLED"}
+        ox, oy = int(ox), int(oy)
+
         props.k1_w, props.k1_h = w, h
-        props.k1_x, props.k1_y = 0, 0
+        props.k1_x, props.k1_y = ox, oy
         props.k1_a = 0
         props.k1_enable_rotation = False
 
         props.k2_w, props.k2_h = w, h
-        props.k2_x, props.k2_y = 0, 0
+        props.k2_x, props.k2_y = ox, oy
         props.k2_a = 1
         props.k2_enable_rotation = False
 
         props.k3_w, props.k3_h = w, h
-        props.k3_x, props.k3_y = 0, 0
+        props.k3_x, props.k3_y = ox, oy
         props.k3_a = 1
         props.k3_enable_rotation = False
 
         props.k4_w, props.k4_h = w, h
-        props.k4_x, props.k4_y = 0, 0
+        props.k4_x, props.k4_y = ox, oy
         props.k4_a = 0
         props.k4_enable_rotation = False
 
@@ -295,45 +372,44 @@ class JF_OT_quick_set(bpy.types.Operator):
             props.k3_enable_pos = True
             props.k3_enable_size = True
 
-        sw, sh = get_screen_size(context)
         slide_x = int(sw * 0.05)
         slide_y = int(sh * 0.05)
         zoom_ratio = 0.4
 
         if type == "MOV_LEFT":
-            props.k4_x = -slide_x
-            props.k4_y = 0
+            props.k4_x = ox - slide_x
+            props.k4_y = oy
         elif type == "MOV_RIGHT":
-            props.k4_x = slide_x
-            props.k4_y = 0
+            props.k4_x = ox + slide_x
+            props.k4_y = oy
         elif type == "MOV_UP":
-            props.k4_x = 0
-            props.k4_y = slide_y
+            props.k4_x = ox
+            props.k4_y = oy + slide_y
         elif type == "MOV_DOWN":
-            props.k4_x = 0
-            props.k4_y = -slide_y
+            props.k4_x = ox
+            props.k4_y = oy - slide_y
         elif type == "FADE":
             pass
         elif type == "UD":
-            props.k1_x = 0
-            props.k1_y = slide_y
-            props.k4_x = 0
-            props.k4_y = -slide_y
+            props.k1_x = ox
+            props.k1_y = oy + slide_y
+            props.k4_x = ox
+            props.k4_y = oy - slide_y
         elif type == "DU":
-            props.k1_x = 0
-            props.k1_y = -slide_y
-            props.k4_x = 0
-            props.k4_y = slide_y
+            props.k1_x = ox
+            props.k1_y = oy - slide_y
+            props.k4_x = ox
+            props.k4_y = oy + slide_y
         elif type == "LR":
-            props.k1_x = -slide_x
-            props.k1_y = 0
-            props.k4_x = slide_x
-            props.k4_y = 0
+            props.k1_x = ox - slide_x
+            props.k1_y = oy
+            props.k4_x = ox + slide_x
+            props.k4_y = oy
         elif type == "RL":
-            props.k1_x = slide_x
-            props.k1_y = 0
-            props.k4_x = -slide_x
-            props.k4_y = 0
+            props.k1_x = ox + slide_x
+            props.k1_y = oy
+            props.k4_x = ox - slide_x
+            props.k4_y = oy
         elif type == "ZOOM+":
             props.k1_w = int(w * zoom_ratio)
             props.k1_h = int(h * zoom_ratio)
@@ -637,9 +713,9 @@ class JF_PT_image_panel(bpy.types.Panel):
         ow, oh = props.img_w, props.img_h
 
         col = layout.column(align=True)
-        row = col.row(align=True)
-        row.prop(props, "size_type", text="")
-        row.prop(props, "anim_type", text="")
+        col.prop(props, "origin_type", text="")
+        col.prop(props, "size_type", text="")
+        col.prop(props, "anim_type", text="")
         row = col.row(align=True)
         row.operator("jf.image_quick_set", text="Generate", icon="MODIFIER")
         row.operator("jf.image_add_image_anim", text="Insert", icon="OUTLINER_OB_IMAGE")
