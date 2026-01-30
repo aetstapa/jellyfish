@@ -16,8 +16,8 @@ def frame_to_timecode(frame, fps):
     h = int(total_seconds // 3600)
     m = int((total_seconds % 3600) // 60)
     s = int(total_seconds % 60)
-    f = int(round((total_seconds - int(total_seconds)) * fps))
-    return f"{h:02d}:{m:02d}:{s:02d}.{f:02d}"
+    ms = int(round((total_seconds - int(total_seconds)) * 1000))
+    return f"{h:02d}:{m:02d}:{s:02d}.{ms:03d}"
 
 
 def frames_to_seconds(frames, fps):
