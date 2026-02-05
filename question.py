@@ -18,10 +18,27 @@ from manimlib import *
 # ]
 # in_time = 17.03
 # keep_time = 3
-question_text = "李白是不是故意冲撞李长史？"
-options = ["A、绝对是故意的", "B、不是"]
-in_time = 8.2
-keep_time = 9.5
+# question_text = "李白是不是故意冲撞李长史？"
+# options = ["A、绝对是故意的", "B、不是"]
+# in_time = 8.2
+# keep_time = 9.5
+# question_text = "李白应该给谁送礼？"
+# options = [
+#     "A、韩荆州本人",
+#     "B、韩的家人：父母、夫人、小妾、子女",
+#     "C、韩的部下",
+#     "D、韩的朋友",
+# ]
+# in_time = 21.6
+# keep_time = 3
+question_text = "朱买臣的前妻为什么自尽？"
+options = [
+    "A、前妻对自己的前倨后恭的行为感到后悔",
+    "B、前妻认为朱买臣是在羞辱她，受不了羞辱而自尽",
+    "C、不是自尽，而是被朱买臣谋杀",
+]
+in_time = 24.6
+keep_time = 11.2
 
 
 class Question(Scene):

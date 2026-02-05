@@ -1,7 +1,7 @@
 from manimlib import *
 import os, re
 
-project_dir = "/Users/jiaju/Documents/视频/001.李白/李白/"
+project_dir = "/Users/jiaju/Documents/视频/001.李白/李白2/"
 
 
 def cook(scene: Scene, basename: str):

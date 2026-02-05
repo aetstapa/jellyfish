@@ -316,23 +316,23 @@ class JF_OT_quick_set(bpy.types.Operator):
 
         origin_type = props.origin_type
         if origin_type == "UL":
-            ox, oy = -sw / 4, sh / 4
+            ox, oy = (w - sw) / 2, (sh - h) / 2
         elif origin_type == "U":
-            ox, oy = 0, sh / 4
+            ox, oy = 0, (sh - h) / 2
         elif origin_type == "UR":
-            ox, oy = sw / 4, sh / 4
+            ox, oy = (sw - w) / 2, (sh - h) / 2
         elif origin_type == "L":
-            ox, oy = -sw / 4, 0
+            ox, oy = (w - sw) / 2, 0
         elif origin_type == "C":
             ox, oy = 0, 0
         elif origin_type == "R":
             ox, oy = sw / 4, 0
         elif origin_type == "DL":
-            ox, oy = -sw / 4, -sh / 4
+            ox, oy = (w - sw) / 2, (h - sh) / 2
         elif origin_type == "D":
-            ox, oy = 0, -sh / 4
+            ox, oy = 0, (h - sh) / 2
         elif origin_type == "DR":
-            ox, oy = sw / 4, -sh / 4
+            ox, oy = (sw - w) / 2, (h - sh) / 2
         else:
             self.report({"ERROR"}, "Unknown origin type")
             return {"CANCELLED"}

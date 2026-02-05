@@ -59,22 +59,81 @@ from PIL import Image
 # poem = ["三百六十日", "日日醉如泥", "虽为李白妇", "何异太常妻"]
 # total_read_time = 7.83
 # total_hold_time = 2
+# poem = [
+#     "窃疑魏洽",
+#     "便欲趋就",
+#     "临然举鞭",
+#     "迟疑之间",
+#     "未及回避",
+#     "且理有疑误而成过",
+#     "事有形似而类真",
+#     "惟大雅含弘",
+#     "方能恕之也",
+# ]
+# total_read_time = 3.6
+# total_hold_time = 9.77
+# poem = [
+#     "白：闻天下谈士相聚而言曰：生不用万户侯，但愿一识韩荆州。",
+#     "何令人之景慕，一至于此耶？",
+#     "岂不以有周公之风，躬吐握之事，",
+#     "使海内豪俊奔走而归之，一登龙门，则声誉十倍。",
+#     "所以龙盘凤逸之士，皆欲收名定价于君侯。",
+#     "愿君侯不以富贵而骄之，寒贱而忽之，则三千宾中有毛遂。",
+#     "使白得颖脱而出，即其人焉。",
+# ]
+# total_read_time = 3
+# total_hold_time = 27.4
+# poem = [
+#     "白陇西布衣。流落楚汉。",
+#     "十五好剑术，徧干诸侯。三十成文章，历抵卿相。",
+#     "虽长不满七尺，而心雄万夫。",
+#     "王公大臣，许与气义。此畴曩心迹，安敢不尽于君侯哉。",
+# ]
+# total_read_time = 3
+# total_hold_time = 29
+# poem = [
+#     "君侯制作侔神明。德行动天地。笔参于造化。学究于天人。",
+#     "幸愿开张心颜，不以长揖见拒。",
+#     "必若接之以高宴，纵之以清谈，请日试万言，倚马可待。",
+#     "今天下以君侯为文章之司命，人物之权衡，一经品题，便作佳士。",
+#     "而君侯何惜阶前盈尺之地，不使白扬眉吐气，激昂青云耶？",
+# ]
+# total_read_time = 3
+# total_hold_time = 12.2
+# poem = [
+#     "昔王子师为豫章，未下车，即辟荀慈明，既下车，又辟孔文举。",
+#     "山涛作冀州，甄拔三十余人，或为侍中、尚书，先代所美。",
+#     "而君侯亦荐一严恊律，入为秘书郎。",
+#     "中间崔宗之、房习、祖黎昕、许莹之徒，",
+#     "或以才名见知，或以清、白见赏。",
+#     "白每观其衔恩抚躬，忠义奋发。",
+#     "白以此感激，知君侯推赤心于诸贤腹中，",
+#     "所以不归他人，而愿委身国士。傥急难有用，敢效微躯",
+# ]
+# total_read_time = 3
+# total_hold_time = 10.5
+# poem = [
+#     "且人非尧舜，谁能尽善？白谟猷筹划，安能尽矜？",
+#     "至于制作，积成卷轴，则欲尘秽视听，",
+#     "恐雕虫小技，不合大人。",
+#     "若赐观刍荛，请给以纸墨，兼人书之，",
+#     "然后退归闲轩，缮写呈上。",
+#     "庶青萍结绿，长价于薛、卞之门，",
+#     "幸惟下流，大开奖饰。惟君侯图之。",
+# ]
+# total_read_time = 3
+# total_hold_time = 5.4
 poem = [
-    "窃疑魏洽",
-    "便欲趋就",
-    "临然举鞭",
-    "迟疑之间",
-    "未及回避",
-    "且理有疑误而成过",
-    "事有形似而类真",
-    "惟大雅含弘",
-    "方能恕之也",
+    "会稽愚妇轻买臣",
+    "余亦辞家西入秦",
+    "仰天大笑出门去",
+    "我辈岂是蓬蒿人",
 ]
-total_read_time = 3.6
-total_hold_time = 9.77
+total_read_time = 10
+total_hold_time = 3
 
-bg_img = "assets/poem-bg.jpg"
-# bg_img = "assets/dog.jpg"
+# bg_img = "assets/poem-bg.jpg"
+bg_img = "assets/shanshui.jpg"
 
 
 class Poem(Scene):
@@ -86,9 +145,10 @@ class Poem(Scene):
         # font = "Songti SC"
         # font = "LXGW WenKai"
         font = "Kaiti SC"
-        font_size = 60
-        char_cell_width = 1.2
-        char_cell_height = 0.8
+        cell_scale = 1
+        font_size = 60 * cell_scale
+        char_cell_width = (1.2 if direction == "V" else 0.8) * cell_scale
+        char_cell_height = (0.8 if direction == "V" else 1.2) * cell_scale
         # color = "#2B2B2B"
         color = "#1F1F1F"
 
@@ -98,7 +158,6 @@ class Poem(Scene):
             img.width / (self.camera.get_pixel_width() / FRAME_WIDTH * bg.get_width())
         )
         bg_ow, bg_oh = bg.get_width(), bg.get_height()
-        print(bg_ow, bg_oh)
         if bg_ow < FRAME_WIDTH or bg_oh < FRAME_HEIGHT:
             r1 = bg_ow / bg_oh
             r2 = FRAME_WIDTH / FRAME_HEIGHT
