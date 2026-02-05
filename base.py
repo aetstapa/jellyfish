@@ -20,6 +20,6 @@ def cook(scene: Scene, basename: str):
         file_writer_config={
             "write_to_movie": True,
             "output_directory": project_dir,
-            "file_name": f"{basename}_v{version}.mp4",
+            "file_name": f"{basename}_v{version}",
         },
     ).run()

@@ -46,7 +46,6 @@ class VSE_PT_time_info(bpy.types.Panel):
         start, end, is_preview = get_active_range(scene)
 
         duration_frames = end - start + 1
-        duration_seconds = frames_to_seconds(duration_frames, fps)
 
         if is_preview:
             layout.label(text="Preview Range", icon="PREVIEW_RANGE")
@@ -57,7 +56,6 @@ class VSE_PT_time_info(bpy.types.Panel):
         col.label(text=f"ST: {frame_to_timecode(start, fps)}")
         col.label(text=f"ET: {frame_to_timecode(end, fps)}")
         col.label(text=f"DT: {frame_to_timecode(duration_frames, fps)}")
-        col.label(text=f"DS: {duration_seconds:.2f} s")
 
         layout.separator()
         layout.label(text=f"Total Frames: {duration_frames}")

@@ -1,17 +1,31 @@
 from manimlib import *
 
-question_text = "下面哪个选项是正确的？"
-options = ["A. 选项一", "B. 选项二", "C. 选项三", "D. 选项四"]
+# question_text = "假如你对工资不满意，正确的做法是"
+# options = [
+#     "A、大骂资本家剥削劳动人民",
+#     "B、老子不干了，跳槽走人",
+#     "C、跟老板谈判，要求涨工资",
+# ]
+# question_text = "李白为什么“臭不要脸”地赞美孟浩然？"
+# options = ["A、真心赞美孟浩然", "B、使用彩虹屁来获得孟浩然的好感", "C、捧杀孟浩然"]
+# in_time = 20.57
+# keep_time = 3
+# question_text = "李白为什么要喝那么多酒？"
+# options = [
+#     "A、乔迁新居，心情很愉快",
+#     "B、不喝酒写不出好诗",
+#     "C、入赘豪门，有钱了，报复性消费",
+# ]
+# in_time = 17.03
+# keep_time = 3
+question_text = "李白是不是故意冲撞李长史？"
+options = ["A、绝对是故意的", "B、不是"]
+in_time = 8.2
+keep_time = 9.5
 
 
 class Question(Scene):
     def construct(self):
-        # FAFAFA
-        self.camera.background_rgba = [250 / 255, 250 / 255, 250 / 255, 1]
-        self.camera.fps = 30
-
-        in_time = 4
-        keep_time = 5
         question_time_ratio = 0.3
         question_time = in_time * question_time_ratio
         option_time = in_time * (1 - question_time_ratio) / len(options)

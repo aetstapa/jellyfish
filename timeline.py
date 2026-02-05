@@ -25,9 +25,6 @@ class Timeline(Scene):
         return shadows
 
     def construct(self):
-        #  FAFAFA
-        self.camera.background_rgba = [250 / 255, 250 / 255, 250 / 255, 1]
-
         reversed = start_time[0] > end_time[0] or (
             start_time[0] == end_time[0] and start_time[1] > end_time[1]
         )
