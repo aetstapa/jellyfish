@@ -123,17 +123,54 @@ from PIL import Image
 # ]
 # total_read_time = 3
 # total_hold_time = 5.4
+# poem = [
+#     "会稽愚妇轻买臣",
+#     "余亦辞家西入秦",
+#     "仰天大笑出门去",
+#     "我辈岂是蓬蒿人",
+# ]
+# total_read_time = 10
+# total_hold_time = 3
+# poem = [
+#     "鸡聚族以争食",
+#     "凤孤飞而无邻",
+#     "蝘蜓嘲龙，鱼目混珍",
+#     "嫫母衣锦，西施负薪",
+#     "若使巢由桎梏于轩冕兮",
+#     "亦奚异于夔龙蹩躠于风尘",
+#     "哭何苦而救楚",
+#     "笑何夸而却秦",
+#     "吾诚不能学二子",
+#     "沽名矫节以耀世兮",
+#     "固将弃天地而遗身",
+#     "白鸥兮飞来",
+#     "长与君兮相亲",
+# ]
+# total_read_time = 5
+# total_hold_time = 12.2
+# poem = [
+#     "江城如画里",
+#     "山晚望晴空",
+#     "两水夹明镜",
+#     "双桥落彩虹",
+#     "人烟寒橘柚",
+#     "秋色老梧桐",
+#     "谁念北楼上",
+#     "临风怀谢公",
+# ]
+# total_read_time = 17
+# total_hold_time = 3
 poem = [
-    "会稽愚妇轻买臣",
-    "余亦辞家西入秦",
-    "仰天大笑出门去",
-    "我辈岂是蓬蒿人",
+    "朝辞白帝彩云间",
+    "千里江陵一日还",
+    "两岸猿声啼不住",
+    "轻舟已过万重山",
 ]
-total_read_time = 10
-total_hold_time = 3
+total_read_time = 10.2
+total_hold_time = 14
 
 # bg_img = "assets/poem-bg.jpg"
-bg_img = "assets/shanshui.jpg"
+bg_img = "assets/sanxia.jpg"
 
 
 class Poem(Scene):
@@ -151,6 +188,8 @@ class Poem(Scene):
         char_cell_height = (0.8 if direction == "V" else 1.2) * cell_scale
         # color = "#2B2B2B"
         color = "#1F1F1F"
+        color = "#FFFFFF"
+        force_bg_fit = True
 
         img = Image.open(bg_img)
         bg = ImageMobject(bg_img)
@@ -158,7 +197,7 @@ class Poem(Scene):
             img.width / (self.camera.get_pixel_width() / FRAME_WIDTH * bg.get_width())
         )
         bg_ow, bg_oh = bg.get_width(), bg.get_height()
-        if bg_ow < FRAME_WIDTH or bg_oh < FRAME_HEIGHT:
+        if force_bg_fit or (bg_ow < FRAME_WIDTH or bg_oh < FRAME_HEIGHT):
             r1 = bg_ow / bg_oh
             r2 = FRAME_WIDTH / FRAME_HEIGHT
             if r1 > r2:

@@ -31,14 +31,34 @@ from manimlib import *
 # ]
 # in_time = 21.6
 # keep_time = 3
-question_text = "朱买臣的前妻为什么自尽？"
+# question_text = "朱买臣的前妻为什么自尽？"
+# options = [
+#     "A、前妻对自己的前倨后恭的行为感到后悔",
+#     "B、前妻认为朱买臣是在羞辱她，受不了羞辱而自尽",
+#     "C、不是自尽，而是被朱买臣谋杀",
+# ]
+# in_time = 24.6
+# keep_time = 11.2
+# question_text = "这首歌是改编自李白的那首诗？"
+# options = ["A、秋登宣城谢脁北楼", "B、谢公亭", "C、宣城见杜鹃花"]
+# in_time = 16
+# keep_time = 3
+# question_text = "李璘为什么要招募李白？"
+# options = [
+#     "A、李璘欣赏李白的才华",
+#     "B、李璘欣赏李白的正直的品格",
+#     "C、李白和李璘都姓李",
+# ]
+# in_time = 17
+# keep_time = 2
+question_text = "李白为什么两次娶前宰相的孙女？"
 options = [
-    "A、前妻对自己的前倨后恭的行为感到后悔",
-    "B、前妻认为朱买臣是在羞辱她，受不了羞辱而自尽",
-    "C、不是自尽，而是被朱买臣谋杀",
+    "A、解决旅游产生的财政危机",
+    "B、李白和两任夫人是真心相爱的",
+    "C、李白牙口不好",
 ]
-in_time = 24.6
-keep_time = 11.2
+in_time = 27
+keep_time = 2
 
 
 class Question(Scene):
